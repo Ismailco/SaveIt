@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaveIt - Bookmark Manager</title>
+    <link rel="stylesheet" href="newtab.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SaveIt</h1>
+            <p>Your Bookmark Manager</p>
+        </header>
+
+        <div class="main-content">
+            <div class="categories-section">
+                <div class="section-header">
+                    <h2>Categories</h2>
+                    <button id="add-category-btn" class="btn">+ Add Category</button>
+                </div>
+                <div id="categories-list" class="categories-list">
+                    <!-- Categories will be inserted here -->
+                </div>
+            </div>
+
+            <div class="bookmarks-section">
+                <div class="section-header">
+                    <h2 id="current-category">Select a Category</h2>
+                    <button id="add-bookmark-btn" class="btn" disabled>+ Add Bookmark</button>
+                </div>
+                <div id="bookmarks-list" class="bookmarks-list">
+                    <!-- Bookmarks will be inserted here -->
+                    <p id="no-category-selected">Please select a category to view bookmarks</p>
+                </div>
+            </div>
+
+            <div class="open-tabs-section">
+                <div class="section-header">
+                    <h2>Open Tabs</h2>
+                    <button id="refresh-tabs-btn" class="btn">↻ Refresh</button>
+                </div>
+                <div id="open-tabs-list" class="open-tabs-list">
+                    <!-- Open tabs will be inserted here -->
+                    <p id="loading-tabs">Loading open tabs...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Category Modal -->
+        <div id="add-category-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add New Category</h2>
+                <form id="add-category-form">
+                    <div class="form-group">
+                        <label for="category-name">Category Name:</label>
+                        <input type="text" id="category-name" required>
+                    </div>
+                    <button type="submit" class="btn">Add Category</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Bookmark Modal -->
+        <div id="add-bookmark-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add New Bookmark</h2>
+                <form id="add-bookmark-form">
+                    <div class="form-group">
+                        <label for="bookmark-title">Title:</label>
+                        <input type="text" id="bookmark-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookmark-url">URL:</label>
+                        <input type="url" id="bookmark-url" required>
+                    </div>
+                    <button type="submit" class="btn">Add Bookmark</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="newtab.js"></script>
+</body>
+</html>
