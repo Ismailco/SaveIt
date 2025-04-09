@@ -56,7 +56,12 @@ function loadDataFromLocalStorage() {
         bookmarks = [
             { id: 'bookmark-1', categoryId: 'category-1', title: 'Google', url: 'https://www.google.com' },
             { id: 'bookmark-2', categoryId: 'category-1', title: 'GitHub', url: 'https://www.github.com' },
-            { id: 'bookmark-3', categoryId: 'category-2', title: 'YouTube', url: 'https://www.youtube.com' }
+            { id: 'bookmark-3', categoryId: 'category-2', title: 'YouTube', url: 'https://www.youtube.com' },
+            { id: 'bookmark-4', categoryId: 'category-1', title: 'Stack Overflow', url: 'https://stackoverflow.com' },
+            { id: 'bookmark-5', categoryId: 'category-1', title: 'MDN Web Docs', url: 'https://developer.mozilla.org' },
+            { id: 'bookmark-6', categoryId: 'category-2', title: 'Netflix', url: 'https://www.netflix.com' },
+            { id: 'bookmark-7', categoryId: 'category-2', title: 'Twitter', url: 'https://twitter.com' },
+            { id: 'bookmark-8', categoryId: 'category-2', title: 'Reddit', url: 'https://www.reddit.com' }
         ];
         saveBookmarksToLocalStorage();
     }
@@ -134,7 +139,8 @@ function renderBookmarks() {
         const noBookmarks = document.createElement('p');
         noBookmarks.textContent = 'No bookmarks in this category yet.';
         noBookmarks.style.textAlign = 'center';
-        noBookmarks.style.color = '#7f8c8d';
+        noBookmarks.style.color = '#a0a0a0';
+        noBookmarks.style.gridColumn = 'span 5';
         bookmarksList.appendChild(noBookmarks);
         return;
     }
@@ -144,26 +150,38 @@ function renderBookmarks() {
         bookmarkItem.className = 'bookmark-item';
         bookmarkItem.dataset.id = bookmark.id;
 
-        const domain = new URL(bookmark.url).hostname;
-        const firstLetter = bookmark.title.charAt(0).toUpperCase();
+        try {
+            const domain = new URL(bookmark.url).hostname;
+            const firstLetter = bookmark.title.charAt(0).toUpperCase();
 
-        bookmarkItem.innerHTML = `
-            <div class="bookmark-info">
-                <div class="bookmark-icon">${firstLetter}</div>
-                <div>
-                    <div class="bookmark-title">${bookmark.title}</div>
-                    <a href="${bookmark.url}" class="bookmark-url" target="_blank">${domain}</a>
+            bookmarkItem.innerHTML = `
+                <div class="bookmark-info">
+                    <div class="bookmark-icon">${firstLetter}</div>
+                    <div class="bookmark-title" title="${bookmark.title}">${bookmark.title}</div>
+                    <a href="${bookmark.url}" class="bookmark-url" target="_blank" title="${domain}">${domain}</a>
                 </div>
-            </div>
-            <span class="bookmark-delete" data-id="${bookmark.id}">&times;</span>
-        `;
+                <span class="bookmark-delete" data-id="${bookmark.id}">&times;</span>
+            `;
 
-        bookmarksList.appendChild(bookmarkItem);
+            // Make the entire bookmark item clickable except the delete button
+            bookmarkItem.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('bookmark-delete') &&
+                    !e.target.classList.contains('bookmark-url')) {
+                    window.open(bookmark.url, '_blank');
+                }
+            });
+
+            bookmarksList.appendChild(bookmarkItem);
+        } catch (e) {
+            // Handle invalid URLs gracefully
+            console.error(`Invalid URL for bookmark: ${bookmark.title}`, e);
+        }
     });
 
     // Add event listeners to bookmark delete buttons
     document.querySelectorAll('.bookmark-delete').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
             deleteBookmark(btn.dataset.id);
         });
     });
@@ -177,7 +195,7 @@ function renderOpenTabs() {
         const noTabs = document.createElement('p');
         noTabs.textContent = 'No open tabs found.';
         noTabs.style.textAlign = 'center';
-        noTabs.style.color = '#7f8c8d';
+        noTabs.style.color = '#a0a0a0';
         openTabsList.appendChild(noTabs);
         return;
     }
