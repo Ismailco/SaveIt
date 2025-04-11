@@ -24,6 +24,8 @@ let currentCategoryId = null;
 let bookmarks = [];
 let categories = [];
 let openTabs = [];
+let draggedItem = null;
+let draggedItemType = null;
 
 // Initialize app
 function init() {
@@ -43,8 +45,8 @@ function loadDataFromLocalStorage() {
     } else {
         // Add sample categories if none exist
         categories = [
-            { id: 'category-1', name: 'Work' },
-            { id: 'category-2', name: 'Personal' }
+            { id: 'category-1', name: 'Work', order: 0 },
+            { id: 'category-2', name: 'Personal', order: 1 }
         ];
         saveCategoriesToLocalStorage();
     }
@@ -54,17 +56,37 @@ function loadDataFromLocalStorage() {
     } else {
         // Add sample bookmarks if none exist
         bookmarks = [
-            { id: 'bookmark-1', categoryId: 'category-1', title: 'Google', url: 'https://www.google.com' },
-            { id: 'bookmark-2', categoryId: 'category-1', title: 'GitHub', url: 'https://www.github.com' },
-            { id: 'bookmark-3', categoryId: 'category-2', title: 'YouTube', url: 'https://www.youtube.com' },
-            { id: 'bookmark-4', categoryId: 'category-1', title: 'Stack Overflow', url: 'https://stackoverflow.com' },
-            { id: 'bookmark-5', categoryId: 'category-1', title: 'MDN Web Docs', url: 'https://developer.mozilla.org' },
-            { id: 'bookmark-6', categoryId: 'category-2', title: 'Netflix', url: 'https://www.netflix.com' },
-            { id: 'bookmark-7', categoryId: 'category-2', title: 'Twitter', url: 'https://twitter.com' },
-            { id: 'bookmark-8', categoryId: 'category-2', title: 'Reddit', url: 'https://www.reddit.com' }
+            { id: 'bookmark-1', categoryId: 'category-1', title: 'Google', url: 'https://www.google.com', order: 0 },
+            { id: 'bookmark-2', categoryId: 'category-1', title: 'GitHub', url: 'https://www.github.com', order: 1 },
+            { id: 'bookmark-3', categoryId: 'category-2', title: 'YouTube', url: 'https://www.youtube.com', order: 0 },
+            { id: 'bookmark-4', categoryId: 'category-1', title: 'Stack Overflow', url: 'https://stackoverflow.com', order: 2 },
+            { id: 'bookmark-5', categoryId: 'category-1', title: 'MDN Web Docs', url: 'https://developer.mozilla.org', order: 3 },
+            { id: 'bookmark-6', categoryId: 'category-2', title: 'Netflix', url: 'https://www.netflix.com', order: 1 },
+            { id: 'bookmark-7', categoryId: 'category-2', title: 'Twitter', url: 'https://twitter.com', order: 2 },
+            { id: 'bookmark-8', categoryId: 'category-2', title: 'Reddit', url: 'https://www.reddit.com', order: 3 }
         ];
         saveBookmarksToLocalStorage();
     }
+
+    // Ensure each item has an order property
+    categories.forEach((category, index) => {
+        if (category.order === undefined) {
+            category.order = index;
+        }
+    });
+
+    bookmarks.forEach((bookmark, index) => {
+        if (bookmark.order === undefined) {
+            bookmark.order = index;
+        }
+    });
+
+    // Sort categories and bookmarks by order
+    categories.sort((a, b) => a.order - b.order);
+    bookmarks.sort((a, b) => a.order - b.order);
+
+    saveCategoriesToLocalStorage();
+    saveBookmarksToLocalStorage();
 }
 
 // Save categories to localStorage
@@ -75,6 +97,16 @@ function saveCategoriesToLocalStorage() {
 // Save bookmarks to localStorage
 function saveBookmarksToLocalStorage() {
     localStorage.setItem('saveItBookmarks', JSON.stringify(bookmarks));
+}
+
+// Get favicon URL for a domain
+function getFaviconUrl(url) {
+    try {
+        const domain = new URL(url).hostname;
+        return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    } catch (e) {
+        return null;
+    }
 }
 
 // Load open tabs using Chrome API
@@ -94,12 +126,17 @@ function loadOpenTabs() {
 function renderCategories() {
     categoriesList.innerHTML = '';
 
+    // Sort categories by order
+    categories.sort((a, b) => a.order - b.order);
+
     categories.forEach(category => {
         const categoryItem = document.createElement('div');
         categoryItem.className = `category-item ${category.id === currentCategoryId ? 'active' : ''}`;
         categoryItem.dataset.id = category.id;
+        categoryItem.draggable = true;
 
         categoryItem.innerHTML = `
+            <span class="drag-handle">≡</span>
             <span class="category-name">${category.name}</span>
             <span class="category-delete" data-id="${category.id}">&times;</span>
         `;
@@ -110,9 +147,25 @@ function renderCategories() {
     // Add event listeners to category items and delete buttons
     document.querySelectorAll('.category-item').forEach(item => {
         item.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('category-delete')) {
+            if (!e.target.classList.contains('category-delete') &&
+                !e.target.classList.contains('drag-handle')) {
                 selectCategory(item.dataset.id);
             }
+        });
+
+        // Drag and drop events for categories
+        item.addEventListener('dragstart', (e) => {
+            draggedItem = item;
+            draggedItemType = 'category';
+            setTimeout(() => {
+                item.classList.add('dragging');
+            }, 0);
+        });
+
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+            draggedItem = null;
+            draggedItemType = null;
         });
     });
 
@@ -121,6 +174,37 @@ function renderCategories() {
             e.stopPropagation();
             deleteCategory(btn.dataset.id);
         });
+    });
+
+    // Add drop zone for categories
+    categoriesList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (draggedItemType !== 'category') return;
+
+        const afterElement = getDragAfterElement(categoriesList, e.clientY);
+        const draggable = document.querySelector('.dragging');
+
+        if (afterElement == null) {
+            categoriesList.appendChild(draggable);
+        } else {
+            categoriesList.insertBefore(draggable, afterElement);
+        }
+    });
+
+    categoriesList.addEventListener('drop', () => {
+        if (draggedItemType !== 'category') return;
+
+        // Update order of categories based on their new positions
+        const categoryItems = document.querySelectorAll('.category-item');
+        categoryItems.forEach((item, index) => {
+            const categoryId = item.dataset.id;
+            const category = categories.find(cat => cat.id === categoryId);
+            if (category) {
+                category.order = index;
+            }
+        });
+
+        saveCategoriesToLocalStorage();
     });
 }
 
@@ -145,30 +229,56 @@ function renderBookmarks() {
         return;
     }
 
+    // Sort bookmarks by order
+    categoryBookmarks.sort((a, b) => a.order - b.order);
+
     categoryBookmarks.forEach(bookmark => {
         const bookmarkItem = document.createElement('div');
         bookmarkItem.className = 'bookmark-item';
         bookmarkItem.dataset.id = bookmark.id;
+        bookmarkItem.draggable = true;
 
         try {
             const domain = new URL(bookmark.url).hostname;
+            const faviconUrl = getFaviconUrl(bookmark.url);
             const firstLetter = bookmark.title.charAt(0).toUpperCase();
+
+            const iconContent = faviconUrl
+                ? `<img src="${faviconUrl}" class="bookmark-favicon" alt="${firstLetter}">`
+                : `<div class="bookmark-icon">${firstLetter}</div>`;
 
             bookmarkItem.innerHTML = `
                 <div class="bookmark-info">
-                    <div class="bookmark-icon">${firstLetter}</div>
+                    <div class="drag-handle bookmark-drag-handle">≡</div>
+                    ${iconContent}
                     <div class="bookmark-title" title="${bookmark.title}">${bookmark.title}</div>
                     <a href="${bookmark.url}" class="bookmark-url" target="_blank" title="${domain}">${domain}</a>
                 </div>
                 <span class="bookmark-delete" data-id="${bookmark.id}">&times;</span>
             `;
 
-            // Make the entire bookmark item clickable except the delete button
+            // Make the bookmark item clickable except for specific elements
             bookmarkItem.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('bookmark-delete') &&
-                    !e.target.classList.contains('bookmark-url')) {
+                    !e.target.classList.contains('bookmark-url') &&
+                    !e.target.classList.contains('drag-handle')) {
                     window.open(bookmark.url, '_blank');
                 }
+            });
+
+            // Drag and drop events for bookmarks
+            bookmarkItem.addEventListener('dragstart', (e) => {
+                draggedItem = bookmarkItem;
+                draggedItemType = 'bookmark';
+                setTimeout(() => {
+                    bookmarkItem.classList.add('dragging');
+                }, 0);
+            });
+
+            bookmarkItem.addEventListener('dragend', () => {
+                bookmarkItem.classList.remove('dragging');
+                draggedItem = null;
+                draggedItemType = null;
             });
 
             bookmarksList.appendChild(bookmarkItem);
@@ -185,6 +295,75 @@ function renderBookmarks() {
             deleteBookmark(btn.dataset.id);
         });
     });
+
+    // Add drop zone for bookmarks
+    bookmarksList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (draggedItemType !== 'bookmark') return;
+
+        const draggable = document.querySelector('.dragging');
+        const afterElement = getDragAfterElementGrid(bookmarksList, e.clientX, e.clientY);
+
+        if (afterElement == null) {
+            bookmarksList.appendChild(draggable);
+        } else {
+            bookmarksList.insertBefore(draggable, afterElement);
+        }
+    });
+
+    bookmarksList.addEventListener('drop', () => {
+        if (draggedItemType !== 'bookmark') return;
+
+        // Update order of bookmarks based on new positions
+        const bookmarkItems = document.querySelectorAll('.bookmark-item');
+        let order = 0;
+
+        bookmarkItems.forEach((item) => {
+            const bookmarkId = item.dataset.id;
+            const bookmark = bookmarks.find(bm => bm.id === bookmarkId);
+            if (bookmark) {
+                bookmark.order = order++;
+            }
+        });
+
+        saveBookmarksToLocalStorage();
+    });
+}
+
+// Helper function to get the element after which to place the dragged item (for list layout)
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.category-item:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Helper function to get the element after which to place the dragged item (for grid layout)
+function getDragAfterElementGrid(container, x, y) {
+    const draggableElements = [...container.querySelectorAll('.bookmark-item:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+
+        // Calculate distance to the center of the element
+        const offsetX = x - (box.left + box.width / 2);
+        const offsetY = y - (box.top + box.height / 2);
+        const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+
+        if (distance < closest.distance) {
+            return { distance: distance, element: child };
+        } else {
+            return closest;
+        }
+    }, { distance: Number.POSITIVE_INFINITY }).element;
 }
 
 // Render open tabs
@@ -296,9 +475,15 @@ function deleteBookmark(bookmarkId) {
 
 // Add a new category
 function addCategory(name) {
+    // Find the highest order value and add 1
+    const maxOrder = categories.length > 0
+        ? Math.max(...categories.map(cat => cat.order))
+        : -1;
+
     const newCategory = {
         id: 'category-' + Date.now(),
-        name: name
+        name: name,
+        order: maxOrder + 1
     };
 
     categories.push(newCategory);
@@ -316,11 +501,18 @@ function addBookmark(title, url) {
         url = 'https://' + url;
     }
 
+    // Find the highest order value for the current category and add 1
+    const categoryBookmarks = bookmarks.filter(bookmark => bookmark.categoryId === currentCategoryId);
+    const maxOrder = categoryBookmarks.length > 0
+        ? Math.max(...categoryBookmarks.map(bm => bm.order))
+        : -1;
+
     const newBookmark = {
         id: 'bookmark-' + Date.now(),
         categoryId: currentCategoryId,
         title: title,
-        url: url
+        url: url,
+        order: maxOrder + 1
     };
 
     bookmarks.push(newBookmark);

@@ -147,6 +147,8 @@ header p {
 
 .category-name {
     font-weight: 500;
+    flex-grow: 1;
+    margin: 0 10px;
 }
 
 .category-delete {
@@ -158,6 +160,41 @@ header p {
 
 .category-delete:hover {
     color: #ff4757;
+}
+
+/* Drag Handle Styles */
+.drag-handle {
+    color: #777;
+    cursor: grab;
+    font-size: 1.1rem;
+    padding: 0 5px;
+    user-select: none;
+}
+
+.bookmark-drag-handle {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    z-index: 2;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.bookmark-item:hover .bookmark-drag-handle {
+    opacity: 1;
+}
+
+/* Dragging States */
+.category-item.dragging,
+.bookmark-item.dragging {
+    opacity: 0.7;
+    border: 2px dashed #61dafb;
+    cursor: grabbing;
+}
+
+.category-item.dragging .drag-handle,
+.bookmark-item.dragging .drag-handle {
+    cursor: grabbing;
 }
 
 /* Bookmarks List */
@@ -185,6 +222,7 @@ header p {
     transition: all 0.2s;
     position: relative;
     height: fit-content;
+    cursor: pointer;
 }
 
 .bookmark-item:hover {
@@ -200,6 +238,7 @@ header p {
     justify-content: center;
     text-align: center;
     width: 100%;
+    position: relative;
 }
 
 .bookmark-icon {
@@ -213,6 +252,16 @@ header p {
     font-weight: bold;
     font-size: 1.2rem;
     color: #fff;
+    margin-bottom: 10px;
+}
+
+.bookmark-favicon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: contain;
+    background-color: #2a2a2a;
+    padding: 5px;
     margin-bottom: 10px;
 }
 
