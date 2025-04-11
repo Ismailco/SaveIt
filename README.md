@@ -1,7 +1,7 @@
 # SaveIt
 
 <div align="center">
-  <img src="icons/icon128.png" alt="SaveIt Logo" width="80">
+  <img src="icons/icon1024.png" alt="SaveIt Logo" width="250">
   <h3>A Modern Bookmark Manager for Chrome</h3>
   <p>Beautifully organize and access your bookmarks directly from the new tab page.</p>
 
