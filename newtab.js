@@ -8,6 +8,11 @@ const refreshTabsBtn = document.getElementById('refresh-tabs-btn');
 const currentCategoryHeading = document.getElementById('current-category');
 const noCategorySelected = document.getElementById('no-category-selected');
 const loadingTabs = document.getElementById('loading-tabs');
+const toggleCategoriesBtn = document.getElementById('toggle-categories');
+const toggleTabsBtn = document.getElementById('toggle-tabs');
+const categoriesPanel = document.getElementById('categories-panel');
+const tabsPanel = document.getElementById('tabs-panel');
+const bookmarksSection = document.querySelector('.bookmarks-section');
 
 // Modal Elements
 const addCategoryModal = document.getElementById('add-category-modal');
@@ -26,6 +31,7 @@ let categories = [];
 let openTabs = [];
 let draggedItem = null;
 let draggedItemType = null;
+let draggedTabData = null;
 
 // Initialize app
 function init() {
@@ -33,6 +39,12 @@ function init() {
     renderCategories();
     loadOpenTabs();
     setupEventListeners();
+
+    // Load the saved selected category
+    const savedCategoryId = localStorage.getItem('saveItSelectedCategory');
+    if (savedCategoryId && categories.some(cat => cat.id === savedCategoryId)) {
+        selectCategory(savedCategoryId);
+    }
 }
 
 // Load data from localStorage
@@ -299,34 +311,67 @@ function renderBookmarks() {
     // Add drop zone for bookmarks
     bookmarksList.addEventListener('dragover', (e) => {
         e.preventDefault();
-        if (draggedItemType !== 'bookmark') return;
 
-        const draggable = document.querySelector('.dragging');
-        const afterElement = getDragAfterElementGrid(bookmarksList, e.clientX, e.clientY);
+        // Allow both bookmark and tab drag types
+        if (draggedItemType !== 'bookmark' && draggedItemType !== 'tab') return;
 
-        if (afterElement == null) {
-            bookmarksList.appendChild(draggable);
-        } else {
-            bookmarksList.insertBefore(draggable, afterElement);
+        // Highlight the drop area
+        bookmarksList.classList.add('drag-over');
+
+        if (draggedItemType === 'bookmark') {
+            const draggable = document.querySelector('.dragging');
+            const afterElement = getDragAfterElementGrid(bookmarksList, e.clientX, e.clientY);
+
+            if (afterElement == null) {
+                bookmarksList.appendChild(draggable);
+            } else {
+                bookmarksList.insertBefore(draggable, afterElement);
+            }
         }
     });
 
-    bookmarksList.addEventListener('drop', () => {
-        if (draggedItemType !== 'bookmark') return;
+    bookmarksList.addEventListener('dragleave', () => {
+        bookmarksList.classList.remove('drag-over');
+    });
 
-        // Update order of bookmarks based on new positions
-        const bookmarkItems = document.querySelectorAll('.bookmark-item');
-        let order = 0;
+    bookmarksList.addEventListener('drop', (e) => {
+        e.preventDefault();
+        bookmarksList.classList.remove('drag-over');
 
-        bookmarkItems.forEach((item) => {
-            const bookmarkId = item.dataset.id;
-            const bookmark = bookmarks.find(bm => bm.id === bookmarkId);
-            if (bookmark) {
-                bookmark.order = order++;
+        if (draggedItemType === 'bookmark') {
+            // Update order of bookmarks based on new positions
+            const bookmarkItems = document.querySelectorAll('.bookmark-item');
+            let order = 0;
+
+            bookmarkItems.forEach((item) => {
+                const bookmarkId = item.dataset.id;
+                const bookmark = bookmarks.find(bm => bm.id === bookmarkId);
+                if (bookmark) {
+                    bookmark.order = order++;
+                }
+            });
+
+            saveBookmarksToLocalStorage();
+        } else if (draggedItemType === 'tab' && draggedTabData && currentCategoryId) {
+            // Add the tab as a new bookmark
+            addBookmark(draggedTabData.title, draggedTabData.url);
+
+            // Show visual feedback in the tabs list
+            const tabItem = document.querySelector(`.tab-item[data-id="${draggedTabData.id}"]`);
+            if (tabItem) {
+                const addBtn = tabItem.querySelector('.tab-add');
+                if (addBtn) {
+                    addBtn.textContent = '✓';
+                    addBtn.style.color = '#2ecc71';
+                    setTimeout(() => {
+                        addBtn.textContent = '+';
+                        addBtn.style.color = '';
+                    }, 1500);
+                }
             }
-        });
 
-        saveBookmarksToLocalStorage();
+            draggedTabData = null;
+        }
     });
 }
 
@@ -385,17 +430,53 @@ function renderOpenTabs() {
     filteredTabs.forEach(tab => {
         const tabItem = document.createElement('div');
         tabItem.className = 'tab-item';
+        tabItem.dataset.id = tab.id;
+        tabItem.draggable = true;
 
         // Get favicon or use a default
         const favicon = tab.favIconUrl || '';
 
         tabItem.innerHTML = `
             <div class="tab-info">
+                <div class="tab-drag-handle">≡</div>
                 ${favicon ? `<img src="${favicon}" class="tab-icon" alt="favicon">` : ''}
                 <div class="tab-title" title="${tab.title}">${tab.title}</div>
             </div>
             <span class="tab-add" data-url="${tab.url}" data-title="${tab.title}">+</span>
         `;
+
+        // Make the tab item draggable
+        tabItem.addEventListener('dragstart', (e) => {
+            draggedItem = tabItem;
+            draggedItemType = 'tab';
+            draggedTabData = {
+                id: tab.id,
+                title: tab.title,
+                url: tab.url
+            };
+
+            // Create a drag image
+            const dragImage = document.createElement('div');
+            dragImage.classList.add('tab-drag-image');
+            dragImage.innerHTML = favicon ? `<img src="${favicon}" class="tab-icon">` : '';
+            dragImage.style.position = 'absolute';
+            dragImage.style.top = '-1000px';
+            document.body.appendChild(dragImage);
+
+            e.dataTransfer.setDragImage(dragImage, 15, 15);
+            e.dataTransfer.effectAllowed = 'copy';
+
+            setTimeout(() => {
+                tabItem.classList.add('dragging');
+                document.body.removeChild(dragImage);
+            }, 0);
+        });
+
+        tabItem.addEventListener('dragend', () => {
+            tabItem.classList.remove('dragging');
+            draggedItem = null;
+            draggedItemType = null;
+        });
 
         openTabsList.appendChild(tabItem);
     });
@@ -426,6 +507,9 @@ function renderOpenTabs() {
 function selectCategory(categoryId) {
     currentCategoryId = categoryId;
 
+    // Save the selected category to localStorage
+    localStorage.setItem('saveItSelectedCategory', categoryId);
+
     // Update category heading
     const selectedCategory = categories.find(category => category.id === categoryId);
     currentCategoryHeading.textContent = selectedCategory.name;
@@ -455,6 +539,7 @@ function deleteCategory(categoryId) {
         // Reset current category if it was deleted
         if (currentCategoryId === categoryId) {
             currentCategoryId = null;
+            localStorage.removeItem('saveItSelectedCategory');
             currentCategoryHeading.textContent = 'Select a Category';
             addBookmarkBtn.disabled = true;
         }
@@ -576,6 +661,37 @@ function setupEventListeners() {
         if (e.target === addBookmarkModal) {
             addBookmarkModal.style.display = 'none';
         }
+    });
+
+    // Show category selection alert when dragging a tab but no category is selected
+    document.body.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (draggedItemType === 'tab' && !currentCategoryId &&
+            !document.querySelector('.category-alert')) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'category-alert';
+            alertDiv.textContent = 'Please select a category first!';
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 2000);
+        }
+    });
+
+    // Panel toggle functionality
+    toggleCategoriesBtn.addEventListener('click', () => {
+        categoriesPanel.classList.toggle('collapsed');
+        toggleCategoriesBtn.classList.toggle('collapsed');
+        bookmarksSection.classList.toggle('expanded');
+    });
+
+    toggleTabsBtn.addEventListener('click', () => {
+        tabsPanel.classList.toggle('collapsed');
+        toggleTabsBtn.classList.toggle('collapsed');
+        bookmarksSection.classList.toggle('expanded');
     });
 }
 

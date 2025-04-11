@@ -8,16 +8,15 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>SaveIt</h1>
-            <p>Your Bookmark Manager</p>
-        </header>
-
         <div class="main-content">
-            <div class="categories-section">
+            <button id="toggle-categories" class="panel-toggle left-toggle">◀</button>
+
+            <div id="categories-panel" class="categories-section">
                 <div class="section-header">
                     <h2>Categories</h2>
-                    <button id="add-category-btn" class="btn">+ Add Category</button>
+                    <div class="header-actions">
+                        <button id="add-category-btn" class="btn">+ Add Category</button>
+                    </div>
                 </div>
                 <div id="categories-list" class="categories-list">
                     <!-- Categories will be inserted here -->
@@ -35,17 +34,33 @@
                 </div>
             </div>
 
-            <div class="open-tabs-section">
+            <div id="tabs-panel" class="open-tabs-section">
                 <div class="section-header">
                     <h2>Open Tabs</h2>
-                    <button id="refresh-tabs-btn" class="btn">↻ Refresh</button>
+                    <div class="header-actions">
+                        <button id="refresh-tabs-btn" class="btn">↻ Refresh</button>
+                    </div>
                 </div>
                 <div id="open-tabs-list" class="open-tabs-list">
                     <!-- Open tabs will be inserted here -->
                     <p id="loading-tabs">Loading open tabs...</p>
                 </div>
             </div>
+
+            <button id="toggle-tabs" class="panel-toggle right-toggle">▶</button>
         </div>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <span class="extension-name">SaveIt</span>
+                <div class="social-links">
+                    <a href="https://github.com/ismailco" target="_blank" class="social-link">GitHub</a>
+                    <a href="https://linkedin.com/in/ismailcourr" target="_blank" class="social-link">LinkedIn</a>
+                    <a href="https://ismailcourr.dev" target="_blank" class="social-link">Portfolio</a>
+                </div>
+                <span class="copyright">© 2025</span>
+            </div>
+        </footer>
 
         <!-- Add Category Modal -->
         <div id="add-category-modal" class="modal">
