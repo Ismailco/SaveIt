@@ -30,7 +30,7 @@
 
 1. Clone or download this repository
    ```bash
-   git clone https://github.com/yourusername/saveit.git
+   git clone https://github.com/Ismailco/SaveIt.git
    ```
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top-right corner
