@@ -24,22 +24,23 @@ body {
 
 .main-content {
     display: flex;
-    gap: 20px;
+    gap: 1px;
     flex: 1;
     overflow: hidden;
     height: calc(100% - 40px); /* Adjust for footer */
     position: relative;
-    padding: 0 30px; /* Add padding to accommodate toggle buttons */
+    /* padding: 0 30px; Add padding to accommodate toggle buttons */
 }
 
 /* Panel Toggle Buttons */
 .panel-toggle {
     position: absolute;
     z-index: 20;
+    top: -6px;
     background-color: #1e1e1e;
     color: #61dafb;
     border: none;
-    border-radius: 4px;
+    border-radius: 10px;
     width: 28px;
     height: 28px;
     display: flex;
@@ -58,12 +59,10 @@ body {
 
 .left-toggle {
     left: 0px;
-    top: 0px;
 }
 
 .right-toggle {
     right: 0px;
-    top: 0px;
 }
 
 /* Header actions container */
@@ -180,8 +179,8 @@ body {
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 20px;
-    min-width: 250px;
-    max-width: 400px;
+    min-width: 100px;
+    max-width: 300px;
     overflow-y: auto;
     transition: all 0.3s ease;
     margin-right: 0;
@@ -212,7 +211,7 @@ body {
     color: white;
     border: none;
     padding: 8px 12px;
-    border-radius: 4px;
+    border-radius: 20px;
     cursor: pointer;
     font-size: 0.9rem;
     transition: background-color 0.2s;
