@@ -1,7 +1,7 @@
 # SaveIt
 
 <div align="center">
-  <img src="icons/icon128.png" alt="SaveIt Logo" width="80">
+  <img src="icons/icon1024.png" alt="SaveIt Logo" width="250">
   <h3>A Modern Bookmark Manager for Chrome</h3>
   <p>Beautifully organize and access your bookmarks directly from the new tab page.</p>
 
@@ -30,7 +30,7 @@
 
 1. Clone or download this repository
    ```bash
-   git clone https://github.com/yourusername/saveit.git
+   git clone https://github.com/Ismailco/SaveIt.git
    ```
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top-right corner
