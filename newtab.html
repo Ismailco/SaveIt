@@ -26,7 +26,10 @@
             <div class="bookmarks-section">
                 <div class="section-header">
                     <h2 id="current-category">Select a Category</h2>
-                    <button id="add-bookmark-btn" class="btn" disabled>+ Add Bookmark</button>
+                    <div class="header-actions">
+                        <button id="add-section-btn" class="btn" disabled>+ Add Section</button>
+                        <button id="add-bookmark-btn" class="btn" disabled>+ Add Bookmark</button>
+                    </div>
                 </div>
                 <div id="bookmarks-list" class="bookmarks-list">
                     <!-- Bookmarks will be inserted here -->
@@ -77,6 +80,21 @@
             </div>
         </div>
 
+        <!-- Add Section Modal -->
+        <div id="add-section-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add New Section</h2>
+                <form id="add-section-form">
+                    <div class="form-group">
+                        <label for="section-name">Section Name:</label>
+                        <input type="text" id="section-name" required>
+                    </div>
+                    <button type="submit" class="btn">Add Section</button>
+                </form>
+            </div>
+        </div>
+
         <!-- Add Bookmark Modal -->
         <div id="add-bookmark-modal" class="modal">
             <div class="modal-content">
@@ -90,6 +108,13 @@
                     <div class="form-group">
                         <label for="bookmark-url">URL:</label>
                         <input type="url" id="bookmark-url" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookmark-section">Section:</label>
+                        <select id="bookmark-section">
+                            <option value="">None (Default)</option>
+                            <!-- Sections will be populated dynamically -->
+                        </select>
                     </div>
                     <button type="submit" class="btn">Add Bookmark</button>
                 </form>
