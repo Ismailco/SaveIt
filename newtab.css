@@ -11,7 +11,7 @@ body {
     color: #e1e1e1;
     background-color: #1a1a1a;
     height: 100vh;
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 
 .container {
@@ -27,9 +27,7 @@ body {
     gap: 1px;
     flex: 1;
     overflow: hidden;
-    height: calc(100% - 40px); /* Adjust for footer */
     position: relative;
-    /* padding: 0 30px; Add padding to accommodate toggle buttons */
 }
 
 /* Panel Toggle Buttons */
@@ -80,7 +78,7 @@ body {
 }
 
 .open-tabs-section.collapsed {
-    margin-right: -400px;
+    margin-right: -300px;
     opacity: 0;
     pointer-events: none;
 }
@@ -99,8 +97,8 @@ body {
 .bookmarks-section.expanded {
     flex: 1;
     transition: flex 0.3s ease;
-    margin-left: 15px;
-    margin-right: 15px;
+    /* margin-left: 15px;
+    margin-right: 15px; */
 }
 
 /* Footer Styles */
@@ -479,7 +477,8 @@ body {
 /* Responsive adjustments */
 @media (max-width: 1200px) {
     .main-content {
-        flex-wrap: wrap;
+        flex-direction: column;
+        overflow: visible;
     }
 
     .categories-section,
@@ -487,10 +486,13 @@ body {
     .open-tabs-section {
         flex: 1 1 300px;
         max-width: 100%;
+        min-height: fit-content;
+        max-height: 100%;
+        margin: 10px 0px;
     }
 
     .bookmarks-list {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(1, 1fr) !important;
     }
 
     #no-category-selected {
@@ -536,8 +538,10 @@ body {
 
 /* Bookmarks List */
 .bookmarks-list {
-    display: flex;
-    flex-direction: column;
+    /* display: flex; */
+    /* flex-direction: column; */
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
     padding: 5px;
     min-height: 100px;
