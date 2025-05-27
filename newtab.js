@@ -1,3 +1,160 @@
+// IndexedDB Configuration
+const DB_NAME = 'SaveItDB';
+const DB_VERSION = 1;
+const STORES = {
+    CATEGORIES: 'categories',
+    SECTIONS: 'sections',
+    BOOKMARKS: 'bookmarks',
+    SETTINGS: 'settings'
+};
+
+// IndexedDB Helper Class
+class SaveItDB {
+    static async init() {
+        try {
+            const db = await new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+
+                    // Create object stores if they don't exist
+                    if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
+                        const categoryStore = db.createObjectStore(STORES.CATEGORIES, { keyPath: 'id' });
+                        categoryStore.createIndex('order', 'order', { unique: false });
+                    }
+
+                    if (!db.objectStoreNames.contains(STORES.SECTIONS)) {
+                        const sectionStore = db.createObjectStore(STORES.SECTIONS, { keyPath: 'id' });
+                        sectionStore.createIndex('categoryId', 'categoryId', { unique: false });
+                        sectionStore.createIndex('order', 'order', { unique: false });
+                    }
+
+                    if (!db.objectStoreNames.contains(STORES.BOOKMARKS)) {
+                        const bookmarkStore = db.createObjectStore(STORES.BOOKMARKS, { keyPath: 'id' });
+                        bookmarkStore.createIndex('categoryId', 'categoryId', { unique: false });
+                        bookmarkStore.createIndex('sectionId', 'sectionId', { unique: false });
+                        bookmarkStore.createIndex('order', 'order', { unique: false });
+                    }
+
+                    if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+                        db.createObjectStore(STORES.SETTINGS, { keyPath: 'id' });
+                    }
+                };
+            });
+
+            return db;
+        } catch (error) {
+            console.error('Error initializing database:', error);
+            throw error;
+        }
+    }
+
+    static async getDB() {
+        if (!this._dbPromise) {
+            this._dbPromise = this.init();
+        }
+        return this._dbPromise;
+    }
+
+    static async getAll(storeName) {
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.getAll();
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error(`Error getting all items from ${storeName}:`, error);
+            throw error;
+        }
+    }
+
+    static async get(storeName, id) {
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.get(id);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error(`Error getting item from ${storeName}:`, error);
+            throw error;
+        }
+    }
+
+    static async add(storeName, item) {
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.add(item);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error(`Error adding item to ${storeName}:`, error);
+            throw error;
+        }
+    }
+
+    static async put(storeName, item) {
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.put(item);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error(`Error updating item in ${storeName}:`, error);
+            throw error;
+        }
+    }
+
+    static async delete(storeName, id) {
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.delete(id);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error(`Error deleting item from ${storeName}:`, error);
+            throw error;
+        }
+    }
+
+    static async putSetting(key, value) {
+        return this.put(STORES.SETTINGS, { id: key, value });
+    }
+
+    static async getSetting(key) {
+        const result = await this.get(STORES.SETTINGS, key);
+        return result ? result.value : null;
+    }
+}
+
 // DOM Elements
 const categoriesList = document.getElementById('categories-list');
 const bookmarksList = document.getElementById('bookmarks-list');
@@ -45,29 +202,35 @@ let sidebarState = { // Tracks sidebar panel states
 };
 
 // Initialize app
-function init() {
-    loadDataFromLocalStorage();
-    renderCategories();
-    loadOpenTabs();
-    setupEventListeners();
+async function init() {
+    try {
+        await loadDataFromIndexedDB();
+        renderCategories();
+        loadOpenTabs();
+        setupEventListeners();
 
-    // Load the saved selected category
-    const savedCategoryId = localStorage.getItem('saveItSelectedCategory');
-    if (savedCategoryId && categories.some(cat => cat.id === savedCategoryId)) {
-        selectCategory(savedCategoryId);
-    }
+        // Load the saved selected category
+        const savedCategoryId = await SaveItDB.getSetting('selectedCategory');
+        if (savedCategoryId && categories.some(cat => cat.id === savedCategoryId)) {
+            selectCategory(savedCategoryId);
+        }
 
-    // Load collapsed sections state
-    const savedCollapsedSections = localStorage.getItem('saveItCollapsedSections');
-    if (savedCollapsedSections) {
-        collapsedSections = JSON.parse(savedCollapsedSections);
-    }
+        // Load collapsed sections state
+        const savedCollapsedSections = await SaveItDB.getSetting('collapsedSections');
+        if (savedCollapsedSections) {
+            collapsedSections = savedCollapsedSections;
+        }
 
-    // Load sidebar state
-    const savedSidebarState = localStorage.getItem('saveItSidebarState');
-    if (savedSidebarState) {
-        sidebarState = JSON.parse(savedSidebarState);
-        applySidebarState();
+        // Load sidebar state
+        const savedSidebarState = await SaveItDB.getSetting('sidebarState');
+        if (savedSidebarState) {
+            sidebarState = savedSidebarState;
+            applySidebarState();
+        }
+    } catch (error) {
+        console.error('Error initializing app:', error);
+        // Show error message to user
+        alert('Error loading data. Please refresh the page.');
     }
 }
 
@@ -89,111 +252,134 @@ function applySidebarState() {
     }
 }
 
-// Save sidebar state to localStorage
-function saveSidebarState() {
-    localStorage.setItem('saveItSidebarState', JSON.stringify(sidebarState));
+// Save sidebar state to IndexedDB
+async function saveSidebarState() {
+    try {
+        await SaveItDB.putSetting('sidebarState', sidebarState);
+    } catch (error) {
+        console.error('Error saving sidebar state:', error);
+    }
 }
 
-// Load data from localStorage
-function loadDataFromLocalStorage() {
-    const savedCategories = localStorage.getItem('saveItCategories');
-    const savedBookmarks = localStorage.getItem('saveItBookmarks');
-    const savedSections = localStorage.getItem('saveItSections');
+// Load data from IndexedDB
+async function loadDataFromIndexedDB() {
+    try {
+        // Load categories
+        let loadedCategories = await SaveItDB.getAll(STORES.CATEGORIES);
+        if (loadedCategories.length === 0) {
+            // Add sample categories if none exist
+            loadedCategories = [
+                { id: 'category-1', name: 'Work', order: 0 },
+                { id: 'category-2', name: 'Personal', order: 1 }
+            ];
+            await Promise.all(loadedCategories.map(cat => SaveItDB.add(STORES.CATEGORIES, cat)));
+        }
+        categories = loadedCategories;
 
-    if (savedCategories) {
-        categories = JSON.parse(savedCategories);
-    } else {
-        // Add sample categories if none exist
-        categories = [
-            { id: 'category-1', name: 'Work', order: 0 },
-            { id: 'category-2', name: 'Personal', order: 1 }
-        ];
-        saveCategoriesToLocalStorage();
-    }
+        // Load sections
+        let loadedSections = await SaveItDB.getAll(STORES.SECTIONS);
+        if (loadedSections.length === 0) {
+            // Add sample sections if none exist
+            loadedSections = [
+                { id: 'section-1', categoryId: 'category-1', name: 'Development', order: 0 },
+                { id: 'section-2', categoryId: 'category-1', name: 'Documentation', order: 1 },
+                { id: 'section-3', categoryId: 'category-2', name: 'Entertainment', order: 0 }
+            ];
+            await Promise.all(loadedSections.map(section => SaveItDB.add(STORES.SECTIONS, section)));
+        }
+        sections = loadedSections;
 
-    if (savedSections) {
-        sections = JSON.parse(savedSections);
-    } else {
-        // Add sample sections if none exist
-        sections = [
-            { id: 'section-1', categoryId: 'category-1', name: 'Development', order: 0 },
-            { id: 'section-2', categoryId: 'category-1', name: 'Documentation', order: 1 },
-            { id: 'section-3', categoryId: 'category-2', name: 'Entertainment', order: 0 }
-        ];
-        saveSectionsToLocalStorage();
-    }
+        // Load bookmarks
+        let loadedBookmarks = await SaveItDB.getAll(STORES.BOOKMARKS);
+        if (loadedBookmarks.length === 0) {
+            // Add sample bookmarks if none exist
+            loadedBookmarks = [
+                { id: 'bookmark-1', categoryId: 'category-1', sectionId: 'section-1', title: 'GitHub', url: 'https://www.github.com', order: 0 },
+                { id: 'bookmark-2', categoryId: 'category-1', sectionId: 'section-1', title: 'Stack Overflow', url: 'https://stackoverflow.com', order: 1 },
+                { id: 'bookmark-3', categoryId: 'category-1', sectionId: 'section-2', title: 'MDN Web Docs', url: 'https://developer.mozilla.org', order: 0 },
+                { id: 'bookmark-4', categoryId: 'category-1', sectionId: null, title: 'Google', url: 'https://www.google.com', order: 0 },
+                { id: 'bookmark-5', categoryId: 'category-2', sectionId: 'section-3', title: 'YouTube', url: 'https://www.youtube.com', order: 0 },
+                { id: 'bookmark-6', categoryId: 'category-2', sectionId: 'section-3', title: 'Netflix', url: 'https://www.netflix.com', order: 1 },
+                { id: 'bookmark-7', categoryId: 'category-2', sectionId: null, title: 'Twitter', url: 'https://twitter.com', order: 0 },
+                { id: 'bookmark-8', categoryId: 'category-2', sectionId: null, title: 'Reddit', url: 'https://www.reddit.com', order: 1 }
+            ];
+            await Promise.all(loadedBookmarks.map(bookmark => SaveItDB.add(STORES.BOOKMARKS, bookmark)));
+        }
+        bookmarks = loadedBookmarks;
 
-    if (savedBookmarks) {
-        bookmarks = JSON.parse(savedBookmarks);
-
-        // Update existing bookmarks to include sectionId if they don't have one
-        bookmarks.forEach(bookmark => {
-            if (bookmark.sectionId === undefined) {
-                bookmark.sectionId = null; // Default to no section
+        // Ensure each item has an order property
+        categories.forEach((category, index) => {
+            if (category.order === undefined) {
+                category.order = index;
             }
         });
-    } else {
-        // Add sample bookmarks if none exist
-        bookmarks = [
-            { id: 'bookmark-1', categoryId: 'category-1', sectionId: 'section-1', title: 'GitHub', url: 'https://www.github.com', order: 0 },
-            { id: 'bookmark-2', categoryId: 'category-1', sectionId: 'section-1', title: 'Stack Overflow', url: 'https://stackoverflow.com', order: 1 },
-            { id: 'bookmark-3', categoryId: 'category-1', sectionId: 'section-2', title: 'MDN Web Docs', url: 'https://developer.mozilla.org', order: 0 },
-            { id: 'bookmark-4', categoryId: 'category-1', sectionId: null, title: 'Google', url: 'https://www.google.com', order: 0 },
-            { id: 'bookmark-5', categoryId: 'category-2', sectionId: 'section-3', title: 'YouTube', url: 'https://www.youtube.com', order: 0 },
-            { id: 'bookmark-6', categoryId: 'category-2', sectionId: 'section-3', title: 'Netflix', url: 'https://www.netflix.com', order: 1 },
-            { id: 'bookmark-7', categoryId: 'category-2', sectionId: null, title: 'Twitter', url: 'https://twitter.com', order: 0 },
-            { id: 'bookmark-8', categoryId: 'category-2', sectionId: null, title: 'Reddit', url: 'https://www.reddit.com', order: 1 }
-        ];
-        saveBookmarksToLocalStorage();
+
+        sections.forEach((section, index) => {
+            if (section.order === undefined) {
+                section.order = index;
+            }
+        });
+
+        bookmarks.forEach((bookmark, index) => {
+            if (bookmark.order === undefined) {
+                bookmark.order = index;
+            }
+        });
+
+        // Sort categories, sections, and bookmarks by order
+        categories.sort((a, b) => a.order - b.order);
+        sections.sort((a, b) => a.order - b.order);
+        bookmarks.sort((a, b) => a.order - b.order);
+
+        await Promise.all([
+            saveCategoriestoIndexedDB(),
+            saveSectionsToIndexedDB(),
+            saveBookmarksToIndexedDB()
+        ]);
+
+    } catch (error) {
+        console.error('Error loading data from IndexedDB:', error);
+        throw error;
     }
-
-    // Ensure each item has an order property
-    categories.forEach((category, index) => {
-        if (category.order === undefined) {
-            category.order = index;
-        }
-    });
-
-    sections.forEach((section, index) => {
-        if (section.order === undefined) {
-            section.order = index;
-        }
-    });
-
-    bookmarks.forEach((bookmark, index) => {
-        if (bookmark.order === undefined) {
-            bookmark.order = index;
-        }
-    });
-
-    // Sort categories, sections, and bookmarks by order
-    categories.sort((a, b) => a.order - b.order);
-    sections.sort((a, b) => a.order - b.order);
-    bookmarks.sort((a, b) => a.order - b.order);
-
-    saveCategoriesToLocalStorage();
-    saveSectionsToLocalStorage();
-    saveBookmarksToLocalStorage();
 }
 
-// Save categories to localStorage
-function saveCategoriesToLocalStorage() {
-    localStorage.setItem('saveItCategories', JSON.stringify(categories));
+// Save categories to IndexedDB
+async function saveCategoriestoIndexedDB() {
+    try {
+        await Promise.all(categories.map(category => SaveItDB.put(STORES.CATEGORIES, category)));
+    } catch (error) {
+        console.error('Error saving categories:', error);
+        throw error;
+    }
 }
 
-// Save sections to localStorage
-function saveSectionsToLocalStorage() {
-    localStorage.setItem('saveItSections', JSON.stringify(sections));
+// Save sections to IndexedDB
+async function saveSectionsToIndexedDB() {
+    try {
+        await Promise.all(sections.map(section => SaveItDB.put(STORES.SECTIONS, section)));
+    } catch (error) {
+        console.error('Error saving sections:', error);
+        throw error;
+    }
 }
 
-// Save bookmarks to localStorage
-function saveBookmarksToLocalStorage() {
-    localStorage.setItem('saveItBookmarks', JSON.stringify(bookmarks));
+// Save bookmarks to IndexedDB
+async function saveBookmarksToIndexedDB() {
+    try {
+        await Promise.all(bookmarks.map(bookmark => SaveItDB.put(STORES.BOOKMARKS, bookmark)));
+    } catch (error) {
+        console.error('Error saving bookmarks:', error);
+        throw error;
+    }
 }
 
 // Save collapsed sections state
-function saveCollapsedSectionsToLocalStorage() {
-    localStorage.setItem('saveItCollapsedSections', JSON.stringify(collapsedSections));
+async function saveCollapsedSectionsToIndexedDB() {
+    try {
+        await SaveItDB.putSetting('collapsedSections', collapsedSections);
+    } catch (error) {
+        console.error('Error saving collapsed sections:', error);
+    }
 }
 
 // Get favicon URL for a domain
@@ -288,20 +474,26 @@ function renderCategories() {
         }
     });
 
-    categoriesList.addEventListener('drop', () => {
+    categoriesList.addEventListener('drop', async () => {
         if (draggedItemType !== 'category') return;
 
-        // Update order of categories based on their new positions
-        const categoryItems = document.querySelectorAll('.category-item');
-        categoryItems.forEach((item, index) => {
-            const categoryId = item.dataset.id;
-            const category = categories.find(cat => cat.id === categoryId);
-            if (category) {
-                category.order = index;
-            }
-        });
+        try {
+            // Update order of categories based on their new positions
+            const categoryItems = document.querySelectorAll('.category-item');
+            let order = 0;
 
-        saveCategoriesToLocalStorage();
+            for (const item of categoryItems) {
+                const categoryId = item.dataset.id;
+                const category = categories.find(cat => cat.id === categoryId);
+                if (category) {
+                    category.order = order++;
+                    await SaveItDB.put(STORES.CATEGORIES, category);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating category order:', error);
+            alert('Error updating category order. Please try again.');
+        }
     });
 }
 
@@ -469,7 +661,7 @@ function createSectionElement(section, sectionBookmarks) {
                 delete collapsedSections[section.id];
             }
 
-            saveCollapsedSectionsToLocalStorage();
+            saveCollapsedSectionsToIndexedDB();
         }
     });
 
@@ -510,7 +702,7 @@ function createSectionElement(section, sectionBookmarks) {
                 }
             });
 
-            saveSectionsToLocalStorage();
+            saveSectionsToIndexedDB();
         }
 
         draggedItem = null;
@@ -627,7 +819,7 @@ function setupBookmarksListDragDrop() {
             }
         });
 
-        container.addEventListener('drop', (e) => {
+        container.addEventListener('drop', async (e) => {
             e.preventDefault();
             e.stopPropagation();
             container.classList.remove('drag-over');
@@ -647,35 +839,39 @@ function setupBookmarksListDragDrop() {
             }
 
             if (draggedItemType === 'bookmark') {
-                // Get the dragged bookmark
-                const bookmarkId = draggedItem.dataset.id;
-                const bookmark = bookmarks.find(bm => bm.id === bookmarkId);
+                try {
+                    // Get the dragged bookmark
+                    const bookmarkId = draggedItem.dataset.id;
+                    const bookmark = bookmarks.find(bm => bm.id === bookmarkId);
 
-                if (bookmark) {
-                    // Update the section assignment if it changed
-                    if (bookmark.sectionId !== sectionId) {
-                        bookmark.sectionId = sectionId;
-                    }
-
-                    // Update the order of all bookmarks in this section
-                    const bookmarkItems = container.querySelectorAll('.bookmark-item');
-                    let order = 0;
-
-                    bookmarkItems.forEach(item => {
-                        const bmId = item.dataset.id;
-                        const bm = bookmarks.find(b => b.id === bmId);
-                        if (bm) {
-                            bm.order = order++;
+                    if (bookmark) {
+                        // Update the section assignment if it changed
+                        if (bookmark.sectionId !== sectionId) {
+                            bookmark.sectionId = sectionId;
                         }
-                    });
 
-                    saveBookmarksToLocalStorage();
+                        // Update the order of all bookmarks in this section
+                        const bookmarkItems = container.querySelectorAll('.bookmark-item');
+                        let order = 0;
 
-                    // No need to re-render - the drag and drop visually places the bookmark correctly
+                        for (const item of bookmarkItems) {
+                            const bmId = item.dataset.id;
+                            const bm = bookmarks.find(b => b.id === bmId);
+                            if (bm) {
+                                bm.order = order++;
+                                await SaveItDB.put(STORES.BOOKMARKS, bm);
+                            }
+                        }
+
+                        // No need to re-render - the drag and drop visually places the bookmark correctly
+                    }
+                } catch (error) {
+                    console.error('Error updating bookmark order:', error);
+                    alert('Error updating bookmark order. Please try again.');
                 }
             } else if (draggedItemType === 'tab' && draggedTabData) {
                 // Add the tab as a new bookmark in this section
-                addBookmark(draggedTabData.title, draggedTabData.url, sectionId);
+                await addBookmark(draggedTabData.title, draggedTabData.url, sectionId);
 
                 // Show visual feedback in the tabs list
                 const tabItem = document.querySelector(`.tab-item[data-id="${draggedTabData.id}"]`);
@@ -759,7 +955,7 @@ function setupBookmarksListDragDrop() {
         }
     });
 
-    bookmarksList.addEventListener('drop', (e) => {
+    bookmarksList.addEventListener('drop', async (e) => {
         e.preventDefault();
         bookmarksList.classList.remove('drag-over');
 
@@ -768,7 +964,7 @@ function setupBookmarksListDragDrop() {
 
         if (draggedItemType === 'tab' && draggedTabData && currentCategoryId) {
             // Add the tab as a new bookmark in the default section (null sectionId)
-            addBookmark(draggedTabData.title, draggedTabData.url, null);
+            await addBookmark(draggedTabData.title, draggedTabData.url, null);
 
             // Show visual feedback in the tabs list
             const tabItem = document.querySelector(`.tab-item[data-id="${draggedTabData.id}"]`);
@@ -781,19 +977,23 @@ function setupBookmarksListDragDrop() {
 
             draggedTabData = null;
         } else if (draggedItemType === 'section') {
-            // Update section order
-            const sectionItems = document.querySelectorAll('.bookmark-section');
-            let order = 0;
+            try {
+                // Update section order
+                const sectionItems = document.querySelectorAll('.bookmark-section');
+                let order = 0;
 
-            sectionItems.forEach(item => {
-                const sectionId = item.dataset.id;
-                const section = sections.find(s => s.id === sectionId);
-                if (section) {
-                    section.order = order++;
+                for (const item of sectionItems) {
+                    const sectionId = item.dataset.id;
+                    const section = sections.find(s => s.id === sectionId);
+                    if (section) {
+                        section.order = order++;
+                        await SaveItDB.put(STORES.SECTIONS, section);
+                    }
                 }
-            });
-
-            saveSectionsToLocalStorage();
+            } catch (error) {
+                console.error('Error updating section order:', error);
+                alert('Error updating section order. Please try again.');
+            }
         }
     });
 }
@@ -833,10 +1033,10 @@ function getDragAfterElementHorizontal(container, x, y) {
 }
 
 // Select a category
-function selectCategory(categoryId) {
+async function selectCategory(categoryId) {
     // Update current category
     currentCategoryId = categoryId;
-    localStorage.setItem('saveItSelectedCategory', categoryId);
+    await SaveItDB.putSetting('selectedCategory', categoryId);
 
     // Update UI
     const selectedCategory = categories.find(cat => cat.id === categoryId);
@@ -856,154 +1056,196 @@ function selectCategory(categoryId) {
 }
 
 // Delete a category
-function deleteCategory(categoryId) {
+async function deleteCategory(categoryId) {
     if (confirm('Are you sure you want to delete this category and all its bookmarks?')) {
-        // Remove the category
-        categories = categories.filter(category => category.id !== categoryId);
-        saveCategoriesToLocalStorage();
+        try {
+            // Remove the category from IndexedDB
+            await SaveItDB.delete(STORES.CATEGORIES, categoryId);
+            categories = categories.filter(category => category.id !== categoryId);
 
-        // Remove all bookmarks in this category
-        bookmarks = bookmarks.filter(bookmark => bookmark.categoryId !== categoryId);
-        saveBookmarksToLocalStorage();
+            // Remove all bookmarks in this category from IndexedDB
+            const categoryBookmarks = bookmarks.filter(bookmark => bookmark.categoryId === categoryId);
+            await Promise.all(categoryBookmarks.map(bookmark =>
+                SaveItDB.delete(STORES.BOOKMARKS, bookmark.id)
+            ));
+            bookmarks = bookmarks.filter(bookmark => bookmark.categoryId !== categoryId);
 
-        // Reset current category if it was deleted
-        if (currentCategoryId === categoryId) {
-            currentCategoryId = null;
-            localStorage.removeItem('saveItSelectedCategory');
-            currentCategoryHeading.textContent = 'Select a Category';
-            addBookmarkBtn.disabled = true;
-            addSectionBtn.disabled = true;
+            // Remove all sections in this category from IndexedDB
+            const categorySections = sections.filter(section => section.categoryId === categoryId);
+            await Promise.all(categorySections.map(section =>
+                SaveItDB.delete(STORES.SECTIONS, section.id)
+            ));
+            sections = sections.filter(section => section.categoryId !== categoryId);
+
+            // Reset current category if it was deleted
+            if (currentCategoryId === categoryId) {
+                currentCategoryId = null;
+                await SaveItDB.delete(STORES.SETTINGS, 'selectedCategory');
+                currentCategoryHeading.textContent = 'Select a Category';
+                addBookmarkBtn.disabled = true;
+                addSectionBtn.disabled = true;
+            }
+
+            renderCategories();
+            renderBookmarks();
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            alert('Error deleting category. Please try again.');
         }
-
-        renderCategories();
-        renderBookmarks();
     }
 }
 
 // Delete a bookmark
-function deleteBookmark(bookmarkId) {
+async function deleteBookmark(bookmarkId) {
     if (confirm('Are you sure you want to delete this bookmark?')) {
-        bookmarks = bookmarks.filter(bookmark => bookmark.id !== bookmarkId);
-        saveBookmarksToLocalStorage();
-        renderBookmarks();
+        try {
+            await SaveItDB.delete(STORES.BOOKMARKS, bookmarkId);
+            bookmarks = bookmarks.filter(bookmark => bookmark.id !== bookmarkId);
+            renderBookmarks();
+        } catch (error) {
+            console.error('Error deleting bookmark:', error);
+            alert('Error deleting bookmark. Please try again.');
+        }
     }
 }
 
 // Add a new category
-function addCategory(name) {
-    // Find the highest order value and add 1
-    const maxOrder = categories.length > 0
-        ? Math.max(...categories.map(cat => cat.order))
-        : -1;
+async function addCategory(name) {
+    try {
+        // Find the highest order value and add 1
+        const maxOrder = categories.length > 0
+            ? Math.max(...categories.map(cat => cat.order))
+            : -1;
 
-    const newCategory = {
-        id: 'category-' + Date.now(),
-        name: name,
-        order: maxOrder + 1
-    };
+        const newCategory = {
+            id: 'category-' + Date.now(),
+            name: name,
+            order: maxOrder + 1
+        };
 
-    categories.push(newCategory);
-    saveCategoriesToLocalStorage();
-    renderCategories();
+        await SaveItDB.add(STORES.CATEGORIES, newCategory);
+        categories.push(newCategory);
+        renderCategories();
 
-    // Select the new category
-    selectCategory(newCategory.id);
+        // Select the new category
+        selectCategory(newCategory.id);
+    } catch (error) {
+        console.error('Error adding category:', error);
+        alert('Error adding category. Please try again.');
+    }
 }
 
 // Add a new section
-function addSection(name) {
-    const id = `section-${Date.now()}`;
-    const newSection = {
-        id,
-        categoryId: currentCategoryId,
-        name,
-        order: sections.filter(section => section.categoryId === currentCategoryId).length
-    };
+async function addSection(name) {
+    try {
+        const id = `section-${Date.now()}`;
+        const newSection = {
+            id,
+            categoryId: currentCategoryId,
+            name,
+            order: sections.filter(section => section.categoryId === currentCategoryId).length
+        };
 
-    sections.push(newSection);
-    saveSectionsToLocalStorage();
-    renderBookmarks();
+        await SaveItDB.add(STORES.SECTIONS, newSection);
+        sections.push(newSection);
+        renderBookmarks();
+    } catch (error) {
+        console.error('Error adding section:', error);
+        alert('Error adding section. Please try again.');
+    }
 }
 
 // Edit a section
-function editSection(sectionId) {
+async function editSection(sectionId) {
     const section = sections.find(s => s.id === sectionId);
     if (!section) return;
 
     // Prompt user for new name
     const newName = prompt('Edit section name:', section.name);
     if (newName && newName.trim() !== '') {
-        section.name = newName.trim();
-        saveSectionsToLocalStorage();
-        renderBookmarks();
+        try {
+            section.name = newName.trim();
+            await SaveItDB.put(STORES.SECTIONS, section);
+            renderBookmarks();
+        } catch (error) {
+            console.error('Error updating section:', error);
+            alert('Error updating section. Please try again.');
+        }
     }
 }
 
 // Delete a section
-function deleteSection(sectionId) {
+async function deleteSection(sectionId) {
     if (!confirm('Are you sure you want to delete this section? All bookmarks in this section will be moved to Uncategorized.')) {
         return;
     }
 
-    // Update bookmarks that were in this section
-    bookmarks.forEach(bookmark => {
-        if (bookmark.sectionId === sectionId) {
+    try {
+        // Update bookmarks that were in this section
+        const sectionBookmarks = bookmarks.filter(bookmark => bookmark.sectionId === sectionId);
+        for (const bookmark of sectionBookmarks) {
             bookmark.sectionId = null;
+            await SaveItDB.put(STORES.BOOKMARKS, bookmark);
         }
-    });
 
-    // Remove the section
-    sections = sections.filter(section => section.id !== sectionId);
+        // Remove the section
+        await SaveItDB.delete(STORES.SECTIONS, sectionId);
+        sections = sections.filter(section => section.id !== sectionId);
 
-    // Update localStorage
-    saveSectionsToLocalStorage();
-    saveBookmarksToLocalStorage();
-
-    // Re-render bookmarks
-    renderBookmarks();
+        // Re-render bookmarks
+        renderBookmarks();
+    } catch (error) {
+        console.error('Error deleting section:', error);
+        alert('Error deleting section. Please try again.');
+    }
 }
 
 // Add a new bookmark
-function addBookmark(title, url, sectionId = null) {
+async function addBookmark(title, url, sectionId = null) {
     if (!currentCategoryId) return;
 
-    // Ensure URL has protocol
-    if (!/^https?:\/\//i.test(url)) {
-        url = 'https://' + url;
-    }
-
-    const id = `bookmark-${Date.now()}`;
-    const newBookmark = {
-        id,
-        categoryId: currentCategoryId,
-        sectionId,
-        title,
-        url,
-        order: bookmarks.filter(bookmark =>
-            bookmark.categoryId === currentCategoryId &&
-            bookmark.sectionId === sectionId
-        ).length
-    };
-
-    bookmarks.push(newBookmark);
-    saveBookmarksToLocalStorage();
-    renderBookmarks();
-
-    // Show visual feedback by highlighting the newly added bookmark
-    setTimeout(() => {
-        const bookmarkItem = document.querySelector(`.bookmark-item[data-id="${id}"]`);
-        if (bookmarkItem) {
-            bookmarkItem.classList.add('bookmark-added');
-            // Scroll the section to show the new bookmark if needed
-            const section = bookmarkItem.closest('.section-bookmarks');
-            if (section) {
-                section.scrollTop = section.scrollHeight;
-            }
-            setTimeout(() => {
-                bookmarkItem.classList.remove('bookmark-added');
-            }, 1500);
+    try {
+        // Ensure URL has protocol
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
         }
-    }, 100); // Short delay to ensure the DOM is updated
+
+        const id = `bookmark-${Date.now()}`;
+        const newBookmark = {
+            id,
+            categoryId: currentCategoryId,
+            sectionId,
+            title,
+            url,
+            order: bookmarks.filter(bookmark =>
+                bookmark.categoryId === currentCategoryId &&
+                bookmark.sectionId === sectionId
+            ).length
+        };
+
+        await SaveItDB.add(STORES.BOOKMARKS, newBookmark);
+        bookmarks.push(newBookmark);
+        renderBookmarks();
+
+        // Show visual feedback by highlighting the newly added bookmark
+        setTimeout(() => {
+            const bookmarkItem = document.querySelector(`.bookmark-item[data-id="${id}"]`);
+            if (bookmarkItem) {
+                bookmarkItem.classList.add('bookmark-added');
+                // Scroll the section to show the new bookmark if needed
+                const section = bookmarkItem.closest('.section-bookmarks');
+                if (section) {
+                    section.scrollTop = section.scrollHeight;
+                }
+                setTimeout(() => {
+                    bookmarkItem.classList.remove('bookmark-added');
+                }, 1500);
+            }
+        }, 100);
+    } catch (error) {
+        console.error('Error adding bookmark:', error);
+        alert('Error adding bookmark. Please try again.');
+    }
 }
 
 // Setup event listeners
