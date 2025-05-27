@@ -11,33 +11,31 @@ body {
     color: #e1e1e1;
     background-color: #1a1a1a;
     height: 100vh;
-    /* overflow: hidden; */
 }
 
 .container {
     width: 100%;
     height: 100vh;
-    padding: 20px 20px 0 20px;
     display: flex;
     flex-direction: column;
 }
 
 .main-content {
     display: flex;
-    gap: 1px;
     flex: 1;
     overflow: hidden;
     position: relative;
+    border: 1px solid #3a3a3a;
 }
 
 /* Panel Toggle Buttons */
 .panel-toggle {
     position: absolute;
     z-index: 20;
-    top: -6px;
+    top: 10px;
     background-color: #1e1e1e;
     color: #61dafb;
-    border: none;
+    border: 1px solid #3a3a3a;
     border-radius: 10px;
     width: 28px;
     height: 28px;
@@ -47,20 +45,31 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 14px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .panel-toggle:hover {
     color: #7ee2ff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    background-color: #2a2a2a;
 }
 
 .left-toggle {
-    left: 0px;
+    left: 273px;
+    transform: translateX(50%);
+}
+
+.left-toggle.collapsed {
+    transform: translateX(50%) rotate(180deg);
+    left: 23px;
 }
 
 .right-toggle {
-    right: 0px;
+    right: 300px; /* Width of the tabs panel */
+    transform: translateX(50%);
+}
+
+.right-toggle.collapsed {
+    transform: translateX(50%) rotate(180deg);
+    right: 50px;
 }
 
 /* Header actions container */
@@ -72,39 +81,26 @@ body {
 
 /* Collapsed panel states */
 .categories-section.collapsed {
-    margin-left: -300px;
-    opacity: 0;
+    margin-left: -250px;
+    /* opacity: 0; */
     pointer-events: none;
 }
 
 .open-tabs-section.collapsed {
-    margin-right: -300px;
-    opacity: 0;
+    margin-right: -250px;
+    /* opacity: 0; */
     pointer-events: none;
-}
-
-.left-toggle.collapsed {
-    transform: rotate(180deg);
-    left: 5px;
-}
-
-.right-toggle.collapsed {
-    transform: rotate(180deg);
-    right: 5px;
 }
 
 /* Expanded bookmark section when panels are collapsed */
 .bookmarks-section.expanded {
     flex: 1;
     transition: flex 0.3s ease;
-    /* margin-left: 15px;
-    margin-right: 15px; */
 }
 
 /* Footer Styles */
 .footer {
-    padding: 5px 0;
-    margin-top: 5px;
+    padding: 10px;
     font-size: 0.8rem;
     color: #777;
     border-top: 1px solid #3a3a3a;
@@ -114,7 +110,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 10px;
 }
 
 .extension-name {
@@ -146,21 +141,18 @@ body {
 .categories-section {
     flex: 1;
     background: #2a2a2a;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 20px;
     min-width: 200px;
     max-width: 300px;
     overflow-y: auto;
     transition: all 0.3s ease;
     margin-left: 0;
+    border-right: 1px solid #3a3a3a;
 }
 
 .bookmarks-section {
     flex: 3;
     background: #2a2a2a;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 20px;
     overflow-y: auto;
     transition: all 0.3s ease;
@@ -168,20 +160,18 @@ body {
 
 .bookmarks-section.drag-over {
     background-color: #395367;
-    box-shadow: 0 0 15px rgba(97, 218, 251, 0.5) inset;
 }
 
 .open-tabs-section {
     flex: 2;
     background: #2a2a2a;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 20px;
     min-width: 100px;
     max-width: 300px;
     overflow-y: auto;
     transition: all 0.3s ease;
     margin-right: 0;
+    border-left: 1px solid #3a3a3a;
 }
 
 .section-header {
