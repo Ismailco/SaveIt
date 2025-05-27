@@ -21,7 +21,7 @@
 - **Intuitive Bookmarking** — Add, view, and delete bookmarks within categories
 - **Tab Integration** — View all open tabs and add them to categories with a single click
 - **Elegant UI** — Clean, dark-themed interface for comfortable browsing
-- **Data Privacy** — All data is stored locally in your browser (using localStorage)
+- **Data Privacy** — All data is stored locally in your browser (using IndexedDB)
 - **Zero Data Collection** — No data is sent to any servers
 - **Drag and Drop** — Organize your bookmarks and categories with intuitive drag-and-drop functionality
 - **Collapsible Panels** — Customize your view by toggling sidebar visibility
@@ -71,7 +71,7 @@ Feel free to open issues for bug reports, feature requests, or general feedback.
 
 ## ⚠️ Notes
 
-- This extension uses localStorage, which means data is stored in your browser
+- This extension uses IndexedDB, which means data is stored in your browser
 - Clearing browser data might delete your saved bookmarks
 - There is no sync functionality between different browsers or devices
 - The extension requires "tabs" permission to access your open tabs
