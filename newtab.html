@@ -10,48 +10,77 @@
     <div class="container">
         <div class="main-content">
 
-            <div id="categories-panel" class="categories-section">
+            <aside id="categories-panel" class="panel-card categories-section">
                 <div class="section-header">
-                    <h2>Categories</h2>
-                    <div class="header-actions">
-                        <button id="add-category-btn" class="btn">+ Add Category</button>
+                    <div class="section-heading">
+                        <p class="section-eyebrow">Workspace</p>
+                        <h2>Categories</h2>
                     </div>
                 </div>
                 <div id="categories-list" class="categories-list">
                     <!-- Categories will be inserted here -->
                 </div>
-            </div>
+                <div class="panel-footer">
+                    <button id="add-category-btn" class="btn btn-primary btn-block">
+                        <span class="btn-icon">+</span>
+                        <span>Add Category</span>
+                    </button>
+                </div>
+            </aside>
 
-            <button id="toggle-categories" class="panel-toggle left-toggle">◀</button>
-            
-            <div class="bookmarks-section">
+            <button id="toggle-categories" class="panel-toggle left-toggle" aria-label="Toggle categories panel">
+                <span class="toggle-icon">◀</span>
+            </button>
+
+            <section class="panel-card bookmarks-section">
                 <div class="section-header">
-                    <h2 id="current-category">Select a Category</h2>
+                    <div class="section-heading">
+                        <p class="section-eyebrow">Overview</p>
+                        <h2 id="current-category">Select a Category</h2>
+                    </div>
                     <div class="header-actions">
-                        <button id="add-section-btn" class="btn" disabled>+ Add Section</button>
-                        <button id="add-bookmark-btn" class="btn" disabled>+ Add Bookmark</button>
+                        <button id="add-section-btn" class="btn btn-ghost" disabled>
+                            <span class="btn-icon">+</span>
+                            <span>Section</span>
+                        </button>
+                        <button id="add-bookmark-btn" class="btn btn-primary" disabled>
+                            <span class="btn-icon">★</span>
+                            <span>Bookmark</span>
+                        </button>
                     </div>
                 </div>
                 <div id="bookmarks-list" class="bookmarks-list">
                     <!-- Bookmarks will be inserted here -->
                     <p id="no-category-selected">Please select a category to view bookmarks</p>
                 </div>
-            </div>
+            </section>
 
-            <button id="toggle-tabs" class="panel-toggle right-toggle">▶</button>
+            <button id="toggle-tabs" class="panel-toggle right-toggle" aria-label="Toggle open tabs panel">
+                <span class="toggle-icon">▶</span>
+            </button>
 
-            <div id="tabs-panel" class="open-tabs-section">
+            <aside id="tabs-panel" class="panel-card open-tabs-section">
                 <div class="section-header">
-                    <h2>Open Tabs</h2>
+                    <div class="section-heading">
+                        <p class="section-eyebrow">Currently open</p>
+                        <h2>Open Tabs</h2>
+                    </div>
                     <div class="header-actions">
-                        <button id="refresh-tabs-btn" class="btn">↻ Refresh</button>
+                        <button class="btn btn-ghost" disabled>
+                            <span class="btn-icon">⇩</span>
+                            <span>Save All</span>
+                        </button>
+                        <button id="refresh-tabs-btn" class="btn btn-primary">
+                            <span class="btn-icon">↻</span>
+                            <span>Refresh</span>
+                        </button>
                     </div>
                 </div>
                 <div id="open-tabs-list" class="open-tabs-list">
                     <!-- Open tabs will be inserted here -->
                     <p id="loading-tabs">Loading open tabs...</p>
                 </div>
-            </div>
+            </aside>
         </div>
 
         <footer class="footer">

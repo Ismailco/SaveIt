@@ -20,7 +20,8 @@
 - **Category Management** — Create, organize, and manage bookmark categories
 - **Intuitive Bookmarking** — Add, view, and delete bookmarks within categories
 - **Tab Integration** — View all open tabs and add them to categories with a single click
-- **Elegant UI** — Clean, dark-themed interface for comfortable browsing
+- **Elegant UI** — Refined glassmorphism interface with modern typography and soft shadows
+- **Responsive Layout** — Fluid three-panel grid that adapts beautifully from ultrawide screens down to mobile
 - **Data Privacy** — All data is stored locally in your browser (using IndexedDB)
 - **Zero Data Collection** — No data is sent to any servers
 - **Drag and Drop** — Organize your bookmarks and categories with intuitive drag-and-drop functionality
@@ -52,7 +53,7 @@
 
 If you want to change the appearance or behavior of the extension:
 
-- `newtab.css` — Modify styling and theming
+- `newtab.css` — Tweak the design tokens, layout grid, and component styling
 - `newtab.js` — Customize functionality and behaviors
 - `newtab.html` — Adjust the structure and layout
 - Replace the icon files in the `icons` folder with your own designs

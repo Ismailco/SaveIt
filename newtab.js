@@ -171,6 +171,7 @@ const toggleTabsBtn = document.getElementById('toggle-tabs');
 const categoriesPanel = document.getElementById('categories-panel');
 const tabsPanel = document.getElementById('tabs-panel');
 const bookmarksSection = document.querySelector('.bookmarks-section');
+const mainContent = document.querySelector('.main-content');
 
 // Modal Elements
 const addCategoryModal = document.getElementById('add-category-modal');
@@ -236,20 +237,25 @@ async function init() {
 
 // Apply saved sidebar state
 function applySidebarState() {
-    if (sidebarState.categoriesCollapsed) {
-        categoriesPanel.classList.add('collapsed');
-        toggleCategoriesBtn.classList.add('collapsed');
+    categoriesPanel.classList.toggle('collapsed', sidebarState.categoriesCollapsed);
+    toggleCategoriesBtn.classList.toggle('collapsed', sidebarState.categoriesCollapsed);
+
+    tabsPanel.classList.toggle('collapsed', sidebarState.tabsCollapsed);
+    toggleTabsBtn.classList.toggle('collapsed', sidebarState.tabsCollapsed);
+
+    updateSidebarLayout();
+}
+
+function updateSidebarLayout() {
+    const categoriesCollapsed = categoriesPanel.classList.contains('collapsed');
+    const tabsCollapsed = tabsPanel.classList.contains('collapsed');
+
+    if (mainContent) {
+        mainContent.classList.toggle('left-collapsed', categoriesCollapsed);
+        mainContent.classList.toggle('right-collapsed', tabsCollapsed);
     }
 
-    if (sidebarState.tabsCollapsed) {
-        tabsPanel.classList.add('collapsed');
-        toggleTabsBtn.classList.add('collapsed');
-    }
-
-    // Update bookmarks section expanded state
-    if (sidebarState.categoriesCollapsed || sidebarState.tabsCollapsed) {
-        bookmarksSection.classList.add('expanded');
-    }
+    bookmarksSection.classList.toggle('expanded', categoriesCollapsed && tabsCollapsed);
 }
 
 // Save sidebar state to IndexedDB
@@ -1254,20 +1260,20 @@ function setupEventListeners() {
     toggleCategoriesBtn.addEventListener('click', () => {
         categoriesPanel.classList.toggle('collapsed');
         toggleCategoriesBtn.classList.toggle('collapsed');
-        bookmarksSection.classList.toggle('expanded');
 
         // Update and save state
         sidebarState.categoriesCollapsed = categoriesPanel.classList.contains('collapsed');
+        updateSidebarLayout();
         saveSidebarState();
     });
 
     toggleTabsBtn.addEventListener('click', () => {
         tabsPanel.classList.toggle('collapsed');
         toggleTabsBtn.classList.toggle('collapsed');
-        bookmarksSection.classList.toggle('expanded');
 
         // Update and save state
         sidebarState.tabsCollapsed = tabsPanel.classList.contains('collapsed');
+        updateSidebarLayout();
         saveSidebarState();
     });
 
@@ -1309,6 +1315,8 @@ function setupEventListeners() {
             btn.closest('.modal').style.display = 'none';
         });
     });
+
+    updateSidebarLayout();
 
     // Close modals when clicking outside
     window.addEventListener('click', (e) => {
