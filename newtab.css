@@ -27,7 +27,7 @@
     --radius-sm: 12px;
     --transition-base: 0.25s ease;
     --container-width: 99%;
-    --panel-padding: 28px;
+    --panel-padding: 20px;
     --panel-gap: 20px;
     color-scheme: dark;
 }
@@ -41,7 +41,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 40px 0;
+    padding: 15px 0;
 }
 
 .container {
