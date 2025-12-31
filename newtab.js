@@ -162,6 +162,7 @@ const openTabsList = document.getElementById('open-tabs-list');
 const addCategoryBtn = document.getElementById('add-category-btn');
 const addSectionBtn = document.getElementById('add-section-btn');
 const addBookmarkBtn = document.getElementById('add-bookmark-btn');
+const saveAllBtn = document.getElementById('save-all-btn');
 const refreshTabsBtn = document.getElementById('refresh-tabs-btn');
 const currentCategoryHeading = document.getElementById('current-category');
 const noCategorySelected = document.getElementById('no-category-selected');
@@ -201,6 +202,8 @@ let sidebarState = { // Tracks sidebar panel states
     categoriesCollapsed: false,
     tabsCollapsed: false
 };
+
+let bookmarkIdNonce = 0;
 
 // Initialize app
 async function init() {
@@ -395,6 +398,64 @@ function getFaviconUrl(url) {
         return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
     } catch (e) {
         return null;
+    }
+}
+
+function getTodaySectionName() {
+    return new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+async function saveAllOpenTabs() {
+    if (!currentCategoryId) {
+        alert('Please select a category first before saving open tabs.');
+        return;
+    }
+
+    if (!openTabs || openTabs.length === 0) {
+        alert('No open tabs found.');
+        return;
+    }
+
+    const filteredTabs = openTabs.filter(tab => tab.url && !tab.url.startsWith('chrome://newtab'));
+    if (filteredTabs.length === 0) {
+        alert('No open tabs found.');
+        return;
+    }
+
+    const sectionName = getTodaySectionName();
+    let targetSection = sections.find(
+        section => section.categoryId === currentCategoryId && section.name === sectionName
+    );
+
+    if (!targetSection) {
+        await addSection(sectionName);
+        targetSection = sections.find(
+            section => section.categoryId === currentCategoryId && section.name === sectionName
+        );
+    }
+
+    if (!targetSection) {
+        alert('Error creating section for today. Please try again.');
+        return;
+    }
+
+    const originalDisabled = saveAllBtn ? saveAllBtn.disabled : false;
+    if (saveAllBtn) {
+        saveAllBtn.disabled = true;
+    }
+
+    try {
+        for (const tab of filteredTabs) {
+            await addBookmark(tab.title, tab.url, targetSection.id);
+        }
+    } finally {
+        if (saveAllBtn) {
+            saveAllBtn.disabled = originalDisabled;
+        }
     }
 }
 
@@ -1056,6 +1117,9 @@ async function selectCategory(categoryId) {
     // Enable add buttons
     addBookmarkBtn.disabled = false;
     addSectionBtn.disabled = false;
+    if (saveAllBtn) {
+        saveAllBtn.disabled = false;
+    }
 
     // Render bookmarks for the selected category
     renderBookmarks();
@@ -1090,6 +1154,9 @@ async function deleteCategory(categoryId) {
                 currentCategoryHeading.textContent = 'Select a Category';
                 addBookmarkBtn.disabled = true;
                 addSectionBtn.disabled = true;
+                if (saveAllBtn) {
+                    saveAllBtn.disabled = true;
+                }
             }
 
             renderCategories();
@@ -1216,7 +1283,7 @@ async function addBookmark(title, url, sectionId = null) {
             url = 'https://' + url;
         }
 
-        const id = `bookmark-${Date.now()}`;
+        const id = `bookmark-${Date.now()}-${bookmarkIdNonce++}`;
         const newBookmark = {
             id,
             categoryId: currentCategoryId,
@@ -1308,6 +1375,10 @@ function setupEventListeners() {
 
     // Refresh tabs button
     refreshTabsBtn.addEventListener('click', loadOpenTabs);
+
+    if (saveAllBtn) {
+        saveAllBtn.addEventListener('click', saveAllOpenTabs);
+    }
 
     // Close buttons for modals
     closeButtons.forEach(btn => {
