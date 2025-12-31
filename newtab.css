@@ -279,14 +279,24 @@ body {
 .bookmarks-section {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 0;
     overflow: hidden;
     transition: transform var(--transition-base), opacity var(--transition-base);
 }
 
+.bookmarks-section.panel-card {
+    padding: 0;
+}
+
+.bookmarks-section .section-header {
+    padding: var(--panel-padding);
+    margin-bottom: 0;
+    top: 0;
+}
+
 .bookmarks-section #bookmarks-list {
     overflow-y: auto;
-    padding-bottom: 4px;
+    padding-bottom: 0;
 }
 .bookmarks-section.drag-over {
     background-color: var(--color-accent-muted);
@@ -736,6 +746,11 @@ body {
         grid-template-columns: 1fr;
     }
 
+    .bookmarks-list::before,
+    .section-bookmarks::before {
+        display: none;
+    }
+
     .section-header {
         position: static;
     }
@@ -766,10 +781,22 @@ body {
 .bookmarks-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
+    gap: 0;
     flex: 1;
     min-height: 180px;
     padding-right: 4px;
+    position: relative;
+}
+
+.bookmarks-list::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    border-left: 1px solid var(--color-border);
+    pointer-events: none;
 }
 
 .bookmarks-list > * {
@@ -779,7 +806,19 @@ body {
 .section-bookmarks {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 0;
+    position: relative;
+}
+
+.section-bookmarks::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    border-left: 1px solid var(--color-border);
+    pointer-events: none;
 }
 
 .section-bookmarks > * {
@@ -805,20 +844,26 @@ body {
     justify-content: space-between;
     gap: 12px;
     padding: 16px 18px;
-    border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    box-shadow: 0 12px 24px rgba(8, 11, 17, 0.22);
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: none;
     position: relative;
     cursor: pointer;
     transition: transform var(--transition-base), background var(--transition-base), border var(--transition-base), box-shadow var(--transition-base);
 }
 
+.bookmarks-list .bookmark-item:nth-child(2n),
+.section-bookmarks .bookmark-item:nth-child(2n) {
+    border-right: 0;
+}
+
 .bookmark-item:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.12);
-    transform: translateY(-2px);
-    box-shadow: 0 16px 32px rgba(8, 11, 17, 0.32);
+    transform: none;
+    box-shadow: none;
 }
 
 .bookmark-item:active {
@@ -899,27 +944,29 @@ body {
 
 /* Section Styles */
 .bookmark-section {
-    margin-bottom: 20px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius-md);
+    margin-bottom: 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: 0 14px 32px rgba(9, 12, 18, 0.32);
-    transition: transform var(--transition-base), box-shadow var(--transition-base);
+    box-shadow: none;
+    transition: none;
     width: 100%;
 }
 
 .bookmark-section:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 18px 40px rgba(9, 12, 18, 0.42);
+    transform: none;
+    box-shadow: none;
 }
 
 .section-title-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 18px 24px;
+    padding: var(--panel-padding);
     background: rgba(13, 17, 27, 0.9);
+    border-bottom: 1px solid var(--color-border);
     cursor: pointer;
     transition: background var(--transition-base);
     gap: 16px;
@@ -948,7 +995,7 @@ body {
 }
 
 .section-content {
-    padding: 20px 24px;
+    padding: 0;
     max-height: 1000px;
     overflow: hidden;
     transition: max-height var(--transition-base), padding var(--transition-base);
@@ -982,24 +1029,25 @@ body {
 }
 
 .default-section {
-    margin-bottom: 20px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius-md);
-    padding: 22px 24px;
-    box-shadow: 0 14px 32px rgba(9, 12, 18, 0.28);
+    margin-bottom: 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
 }
 
 .default-section .section-bookmarks {
-    margin-top: 18px;
+    margin-top: 0;
 }
 
 .default-section-title {
     color: var(--text-primary);
     font-weight: 600;
     font-size: 1.05rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--panel-padding);
 }
 
 .bookmark-section.dragging {
