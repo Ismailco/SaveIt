@@ -155,6 +155,234 @@ class SaveItDB {
     }
 }
 
+function handleCategoriesDragOver(e) {
+    e.preventDefault();
+    if (draggedItemType !== 'category') return;
+
+    const afterElement = getDragAfterElement(categoriesList, e.clientY);
+    const draggable = document.querySelector('.dragging');
+    if (!draggable) return;
+
+    if (afterElement == null) {
+        categoriesList.appendChild(draggable);
+    } else {
+        categoriesList.insertBefore(draggable, afterElement);
+    }
+}
+
+async function handleCategoriesDrop() {
+    if (draggedItemType !== 'category') return;
+
+    try {
+        const categoryItems = document.querySelectorAll('.category-item');
+        let order = 0;
+
+        for (const item of categoryItems) {
+            const categoryId = item.dataset.id;
+            const category = categories.find(cat => cat.id === categoryId);
+            if (category) {
+                category.order = order++;
+                await SaveItDB.put(STORES.CATEGORIES, category);
+            }
+        }
+    } catch (error) {
+        console.error('Error updating category order:', error);
+        alert('Error updating category order. Please try again.');
+    }
+}
+
+function handleBookmarksClick(e) {
+    const deleteBtn = e.target.closest('.bookmark-delete');
+    if (!deleteBtn) return;
+    e.stopPropagation();
+    deleteBookmark(deleteBtn.dataset.id);
+}
+
+function handleBookmarksDragOver(e) {
+    const container = e.target.closest('.section-bookmarks');
+    if (container) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (draggedItemType !== 'bookmark' && draggedItemType !== 'tab') return;
+        container.classList.add('drag-over');
+
+        if (draggedItemType === 'bookmark') {
+            const draggable = document.querySelector('.dragging');
+            if (!draggable) return;
+
+            try {
+                const afterElement = getDragAfterElementHorizontal(container, e.clientX, e.clientY);
+                if (afterElement == null) {
+                    container.appendChild(draggable);
+                } else {
+                    container.insertBefore(draggable, afterElement);
+                }
+            } catch (err) {
+                console.error('Error during bookmark drag and drop:', err);
+            }
+        }
+        return;
+    }
+
+    e.preventDefault();
+    if (draggedItemType !== 'bookmark' && draggedItemType !== 'tab' && draggedItemType !== 'section') return;
+    bookmarksList.classList.add('drag-over');
+
+    if (draggedItemType === 'section') {
+        const draggable = document.querySelector('.dragging');
+        if (!draggable) return;
+
+        const allSections = [...document.querySelectorAll('.bookmark-section:not(.dragging)')];
+        const defaultSection = document.querySelector('.default-section');
+        let afterElement = null;
+
+        for (const section of allSections) {
+            const rect = section.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+                if (section.parentNode === bookmarksList) {
+                    afterElement = section;
+                    break;
+                }
+            }
+        }
+
+        if (afterElement == null && defaultSection) {
+            const rect = defaultSection.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2 && defaultSection.parentNode === bookmarksList) {
+                afterElement = defaultSection;
+            }
+        }
+
+        if (afterElement == null) {
+            if (draggable.parentNode !== bookmarksList) {
+                bookmarksList.appendChild(draggable);
+            }
+        } else {
+            try {
+                if (afterElement.parentNode === bookmarksList) {
+                    bookmarksList.insertBefore(draggable, afterElement);
+                }
+            } catch (err) {
+                console.error('Error during section drag and drop:', err);
+            }
+        }
+    }
+}
+
+function handleBookmarksDragLeave(e) {
+    const sectionContainer = e.target && e.target.closest ? e.target.closest('.section-bookmarks') : null;
+    if (sectionContainer) {
+        const container = sectionContainer;
+        if (!e.relatedTarget || !container.contains(e.relatedTarget)) {
+            container.classList.remove('drag-over');
+        }
+        return;
+    }
+
+    if (e.target === bookmarksList) {
+        if (!e.relatedTarget || !bookmarksList.contains(e.relatedTarget)) {
+            bookmarksList.classList.remove('drag-over');
+        }
+    }
+}
+
+async function handleBookmarksDrop(e) {
+    const container = e.target.closest('.section-bookmarks');
+    if (container) {
+        e.preventDefault();
+        e.stopPropagation();
+        container.classList.remove('drag-over');
+
+        const sectionElement = container.closest('.bookmark-section') || container.closest('.default-section');
+        let sectionId = null;
+
+        if (sectionElement) {
+            if (sectionElement.classList.contains('default-section')) {
+                sectionId = null;
+            } else {
+                sectionId = sectionElement.dataset.id;
+            }
+        }
+
+        if (draggedItemType === 'bookmark') {
+            try {
+                if (!draggedItem) return;
+                const bookmarkId = draggedItem.dataset.id;
+                const bookmark = bookmarks.find(bm => bm.id === bookmarkId);
+
+                if (bookmark) {
+                    if (bookmark.sectionId !== sectionId) {
+                        bookmark.sectionId = sectionId;
+                    }
+
+                    const bookmarkItems = container.querySelectorAll('.bookmark-item');
+                    let order = 0;
+
+                    for (const item of bookmarkItems) {
+                        const bmId = item.dataset.id;
+                        const bm = bookmarks.find(b => b.id === bmId);
+                        if (bm) {
+                            bm.order = order++;
+                            await SaveItDB.put(STORES.BOOKMARKS, bm);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating bookmark order:', error);
+                alert('Error updating bookmark order. Please try again.');
+            }
+        } else if (draggedItemType === 'tab' && draggedTabData) {
+            await addBookmark(draggedTabData.title, draggedTabData.url, sectionId);
+
+            const tabItem = document.querySelector(`.tab-item[data-id="${draggedTabData.id}"]`);
+            if (tabItem) {
+                tabItem.classList.add('tab-added');
+                setTimeout(() => {
+                    tabItem.classList.remove('tab-added');
+                }, 1500);
+            }
+
+            draggedTabData = null;
+        }
+        return;
+    }
+
+    e.preventDefault();
+    bookmarksList.classList.remove('drag-over');
+
+    if (draggedItemType === 'tab' && draggedTabData && currentCategoryId) {
+        await addBookmark(draggedTabData.title, draggedTabData.url, null);
+
+        const tabItem = document.querySelector(`.tab-item[data-id="${draggedTabData.id}"]`);
+        if (tabItem) {
+            tabItem.classList.add('tab-added');
+            setTimeout(() => {
+                tabItem.classList.remove('tab-added');
+            }, 1500);
+        }
+
+        draggedTabData = null;
+    } else if (draggedItemType === 'section') {
+        try {
+            const sectionItems = document.querySelectorAll('.bookmark-section');
+            let order = 0;
+
+            for (const item of sectionItems) {
+                const sectionId = item.dataset.id;
+                const section = sections.find(s => s.id === sectionId);
+                if (section) {
+                    section.order = order++;
+                    await SaveItDB.put(STORES.SECTIONS, section);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating section order:', error);
+            alert('Error updating section order. Please try again.');
+        }
+    }
+}
+
 // DOM Elements
 const categoriesList = document.getElementById('categories-list');
 const bookmarksList = document.getElementById('bookmarks-list');
@@ -525,43 +753,6 @@ function renderCategories() {
             deleteCategory(btn.dataset.id);
         });
     });
-
-    // Add drop zone for categories
-    categoriesList.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        if (draggedItemType !== 'category') return;
-
-        const afterElement = getDragAfterElement(categoriesList, e.clientY);
-        const draggable = document.querySelector('.dragging');
-
-        if (afterElement == null) {
-            categoriesList.appendChild(draggable);
-        } else {
-            categoriesList.insertBefore(draggable, afterElement);
-        }
-    });
-
-    categoriesList.addEventListener('drop', async () => {
-        if (draggedItemType !== 'category') return;
-
-        try {
-            // Update order of categories based on their new positions
-            const categoryItems = document.querySelectorAll('.category-item');
-            let order = 0;
-
-            for (const item of categoryItems) {
-                const categoryId = item.dataset.id;
-                const category = categories.find(cat => cat.id === categoryId);
-                if (category) {
-                    category.order = order++;
-                    await SaveItDB.put(STORES.CATEGORIES, category);
-                }
-            }
-        } catch (error) {
-            console.error('Error updating category order:', error);
-            alert('Error updating category order. Please try again.');
-        }
-    });
 }
 
 // Render bookmarks for the selected category
@@ -634,7 +825,6 @@ function renderBookmarks() {
     }
 
     // Setup drag and drop for bookmarks list
-    setupBookmarksListDragDrop();
 }
 
 // Create a section element
@@ -836,233 +1026,6 @@ function createBookmarkElement(bookmark) {
     }
 
     return bookmarkItem;
-}
-
-// Setup drag and drop for bookmarks list
-function setupBookmarksListDragDrop() {
-    // Add event listeners to bookmark delete buttons
-    document.querySelectorAll('.bookmark-delete').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteBookmark(btn.dataset.id);
-        });
-    });
-
-    // Make each section's bookmarks container a drop target
-    document.querySelectorAll('.section-bookmarks, .default-section .section-bookmarks').forEach(container => {
-        container.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // Allow both bookmark and tab drag types
-            if (draggedItemType !== 'bookmark' && draggedItemType !== 'tab') return;
-
-            // Highlight the drop area
-            container.classList.add('drag-over');
-
-            if (draggedItemType === 'bookmark') {
-                const draggable = document.querySelector('.dragging');
-                if (!draggable) return;
-
-                // Try to position within this container
-                try {
-                    const afterElement = getDragAfterElementHorizontal(container, e.clientX, e.clientY);
-
-                    if (afterElement == null) {
-                        container.appendChild(draggable);
-                    } else {
-                        container.insertBefore(draggable, afterElement);
-                    }
-                } catch (err) {
-                    console.error('Error during bookmark drag and drop:', err);
-                }
-            }
-        });
-
-        container.addEventListener('dragleave', (e) => {
-            // Only remove highlight if we're leaving to an element outside this container
-            if (!e.relatedTarget || !container.contains(e.relatedTarget)) {
-                container.classList.remove('drag-over');
-            }
-        });
-
-        container.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            container.classList.remove('drag-over');
-
-            // Find which section this container belongs to
-            const sectionElement = container.closest('.bookmark-section') || container.closest('.default-section');
-            let sectionId = null;
-
-            if (sectionElement) {
-                if (sectionElement.classList.contains('default-section')) {
-                    // This is the default/uncategorized section
-                    sectionId = null;
-                } else {
-                    // This is a regular section
-                    sectionId = sectionElement.dataset.id;
-                }
-            }
-
-            if (draggedItemType === 'bookmark') {
-                try {
-                    // Get the dragged bookmark
-                    const bookmarkId = draggedItem.dataset.id;
-                    const bookmark = bookmarks.find(bm => bm.id === bookmarkId);
-
-                    if (bookmark) {
-                        // Update the section assignment if it changed
-                        if (bookmark.sectionId !== sectionId) {
-                            bookmark.sectionId = sectionId;
-                        }
-
-                        // Update the order of all bookmarks in this section
-                        const bookmarkItems = container.querySelectorAll('.bookmark-item');
-                        let order = 0;
-
-                        for (const item of bookmarkItems) {
-                            const bmId = item.dataset.id;
-                            const bm = bookmarks.find(b => b.id === bmId);
-                            if (bm) {
-                                bm.order = order++;
-                                await SaveItDB.put(STORES.BOOKMARKS, bm);
-                            }
-                        }
-
-                        // No need to re-render - the drag and drop visually places the bookmark correctly
-                    }
-                } catch (error) {
-                    console.error('Error updating bookmark order:', error);
-                    alert('Error updating bookmark order. Please try again.');
-                }
-            } else if (draggedItemType === 'tab' && draggedTabData) {
-                // Add the tab as a new bookmark in this section
-                await addBookmark(draggedTabData.title, draggedTabData.url, sectionId);
-
-                // Show visual feedback in the tabs list
-                const tabItem = document.querySelector(`.tab-item[data-id="${draggedTabData.id}"]`);
-                if (tabItem) {
-                    tabItem.classList.add('tab-added');
-                    setTimeout(() => {
-                        tabItem.classList.remove('tab-added');
-                    }, 1500);
-                }
-
-                draggedTabData = null;
-            }
-        });
-    });
-
-    // Add drop zone for bookmarks and sections in the main bookmarks container
-    bookmarksList.addEventListener('dragover', (e) => {
-        e.preventDefault();
-
-        // Only process if not already handled by a section container
-        if (e.target.closest('.section-bookmarks')) return;
-
-        // Allow bookmark, tab, and section drag types
-        if (draggedItemType !== 'bookmark' && draggedItemType !== 'tab' && draggedItemType !== 'section') return;
-
-        // Highlight the drop area
-        bookmarksList.classList.add('drag-over');
-
-        if (draggedItemType === 'section') {
-            const draggable = document.querySelector('.dragging');
-            if (!draggable) return;
-
-            // Only allow dropping in the correct order relative to other sections
-            const allSections = [...document.querySelectorAll('.bookmark-section:not(.dragging)')];
-            const defaultSection = document.querySelector('.default-section');
-
-            // Find the section after which we should place this one
-            let afterElement = null;
-
-            for (const section of allSections) {
-                const rect = section.getBoundingClientRect();
-                if (e.clientY < rect.top + rect.height / 2) {
-                    // Ensure the section is a direct child of bookmarksList
-                    if (section.parentNode === bookmarksList) {
-                        afterElement = section;
-                        break;
-                    }
-                }
-            }
-
-            if (afterElement == null && defaultSection) {
-                // Check if we should place before the default section
-                const rect = defaultSection.getBoundingClientRect();
-                if (e.clientY < rect.top + rect.height / 2 && defaultSection.parentNode === bookmarksList) {
-                    afterElement = defaultSection;
-                }
-            }
-
-            if (afterElement == null) {
-                // Check if the draggable is already a child of bookmarksList
-                if (draggable.parentNode !== bookmarksList) {
-                    bookmarksList.appendChild(draggable);
-                }
-            } else {
-                try {
-                    // Only attempt to insert if both the draggable and afterElement share the same parent
-                    if (afterElement.parentNode === bookmarksList) {
-                        bookmarksList.insertBefore(draggable, afterElement);
-                    }
-                } catch (err) {
-                    console.error('Error during section drag and drop:', err);
-                }
-            }
-        }
-    });
-
-    bookmarksList.addEventListener('dragleave', (e) => {
-        // Only remove highlight if not still over a child element
-        if (!e.relatedTarget || !bookmarksList.contains(e.relatedTarget)) {
-            bookmarksList.classList.remove('drag-over');
-        }
-    });
-
-    bookmarksList.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        bookmarksList.classList.remove('drag-over');
-
-        // Only process if not already handled by a section container
-        if (e.target.closest('.section-bookmarks')) return;
-
-        if (draggedItemType === 'tab' && draggedTabData && currentCategoryId) {
-            // Add the tab as a new bookmark in the default section (null sectionId)
-            await addBookmark(draggedTabData.title, draggedTabData.url, null);
-
-            // Show visual feedback in the tabs list
-            const tabItem = document.querySelector(`.tab-item[data-id="${draggedTabData.id}"]`);
-            if (tabItem) {
-                tabItem.classList.add('tab-added');
-                setTimeout(() => {
-                    tabItem.classList.remove('tab-added');
-                }, 1500);
-            }
-
-            draggedTabData = null;
-        } else if (draggedItemType === 'section') {
-            try {
-                // Update section order
-                const sectionItems = document.querySelectorAll('.bookmark-section');
-                let order = 0;
-
-                for (const item of sectionItems) {
-                    const sectionId = item.dataset.id;
-                    const section = sections.find(s => s.id === sectionId);
-                    if (section) {
-                        section.order = order++;
-                        await SaveItDB.put(STORES.SECTIONS, section);
-                    }
-                }
-            } catch (error) {
-                console.error('Error updating section order:', error);
-                alert('Error updating section order. Please try again.');
-            }
-        }
-    });
 }
 
 // Helper function optimized for horizontal flex wrap layout
@@ -1323,6 +1286,14 @@ async function addBookmark(title, url, sectionId = null) {
 
 // Setup event listeners
 function setupEventListeners() {
+    categoriesList.addEventListener('dragover', handleCategoriesDragOver);
+    categoriesList.addEventListener('drop', handleCategoriesDrop);
+
+    bookmarksList.addEventListener('click', handleBookmarksClick);
+    bookmarksList.addEventListener('dragover', handleBookmarksDragOver);
+    bookmarksList.addEventListener('dragleave', handleBookmarksDragLeave);
+    bookmarksList.addEventListener('drop', handleBookmarksDrop);
+
     // Toggle panels
     toggleCategoriesBtn.addEventListener('click', () => {
         categoriesPanel.classList.toggle('collapsed');
