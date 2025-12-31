@@ -254,6 +254,22 @@ body {
     transition: transform var(--transition-base), opacity var(--transition-base);
 }
 
+.categories-section.panel-card,
+.open-tabs-section.panel-card {
+    padding: 0;
+}
+
+.categories-section .section-header,
+.open-tabs-section .section-header {
+    padding: var(--panel-padding);
+    margin-bottom: 0;
+    top: 0;
+}
+
+.categories-section .panel-footer {
+    padding: var(--panel-padding);
+}
+
 .categories-section .categories-list {
     overflow-y: auto;
     padding-right: 4px;
@@ -394,7 +410,8 @@ body {
 .categories-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0;
+    border-top: 1px solid var(--color-border);
 }
 
 .panel-footer {
@@ -408,22 +425,21 @@ body {
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
-    border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
     cursor: grab;
     transition: background var(--transition-base), border var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 .category-item:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .category-item.active {
     background: rgba(97, 218, 251, 0.16);
-    border-color: rgba(97, 218, 251, 0.35);
-    box-shadow: 0 12px 24px rgba(61, 200, 255, 0.18);
+    box-shadow: none;
 }
 
 .category-name {
@@ -498,8 +514,9 @@ body {
 .open-tabs-list {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 0;
     flex: 1;
+    border-top: 1px solid var(--color-border);
 }
 
 #loading-tabs {
@@ -514,18 +531,17 @@ body {
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: var(--radius-md);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 12px 24px rgba(9, 12, 18, 0.28);
+    background: transparent;
+    border-radius: 0;
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
     cursor: grab;
     transition: transform var(--transition-base), background var(--transition-base), border var(--transition-base), box-shadow var(--transition-base);
 }
 
 .tab-item:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.14);
-    transform: translateY(-1px);
+    transform: none;
 }
 
 .tab-item:active {
