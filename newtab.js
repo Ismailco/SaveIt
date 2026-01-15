@@ -1034,32 +1034,17 @@ function getDragAfterElementHorizontal(container, x, y) {
 
     if (draggableElements.length === 0) return null;
 
-    // Find the element whose center is closest to the cursor
+    // Treat layout as vertical list: find the element just after the cursor position.
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
-        const centerX = box.left + box.width / 2;
-        const centerY = box.top + box.height / 2;
+        const offset = y - (box.top + box.height / 2);
 
-        // Calculate distance to center of element
-        const distanceX = x - centerX;
-        const distanceY = y - centerY;
-        const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-
-        // First quadrant: drag to right if x > centerX
-        if (distanceX > 0 && Math.abs(distanceY) < box.height) {
-            // If cursor is to the right of this element's center,
-            // place the dragged item after this element
-            if (distance < closest.distance) {
-                return { distance, element: child.nextSibling };
-            }
-        }
-        // If cursor is to the left of or above this element's center
-        else if (distance < closest.distance) {
-            return { distance, element: child };
+        if (offset < 0 && offset > closest.offset) {
+            return { offset, element: child };
         }
 
         return closest;
-    }, { distance: Infinity, element: null }).element;
+    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
 }
 
 // Select a category
