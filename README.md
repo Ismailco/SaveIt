@@ -88,5 +88,5 @@ SaveIt was originally created as a personal project to streamline bookmark manag
 ---
 
 <div align="center">
-  <p>Made with ❤️ by <a href="https://ismailcourr.dev">Ismail Courr</a></p>
+  <p>Made with ☕ by <a href="https://ismailcourr.dev">Ismail Courr</a></p>
 </div>
