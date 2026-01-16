@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SaveIt - Bookmark Manager",
-  "version": "0.1.2",
+  "version": "1.1.0",
   "description": "A simple bookmark manager that overrides the new tab page",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
