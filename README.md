@@ -83,7 +83,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 💡 About
 
-SaveIt was originally created as a personal project to streamline bookmark management. What started as a simple tool for personal use has now grown into a project that I'd like to share with others who might find it useful.
+SaveIt is a personal project to streamline bookmark management. If you find it useful, please star the repo
 
 ---
 
