@@ -699,6 +699,27 @@ function loadOpenTabs() {
     });
 }
 
+function activateOpenTab(tab) {
+    if (!tab || tab.id === undefined) {
+        return;
+    }
+
+    chrome.tabs.update(tab.id, { active: true }, () => {
+        if (chrome.runtime.lastError) {
+            console.error('Error activating tab:', chrome.runtime.lastError.message);
+            return;
+        }
+
+        if (tab.windowId !== undefined && chrome.windows && chrome.windows.update) {
+            chrome.windows.update(tab.windowId, { focused: true }, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('Error focusing tab window:', chrome.runtime.lastError.message);
+                }
+            });
+        }
+    });
+}
+
 // Render categories in the sidebar
 function renderCategories() {
     categoriesList.innerHTML = '';
@@ -1428,7 +1449,7 @@ function renderOpenTabs() {
         tabItem.dataset.url = tab.url;
         tabItem.dataset.title = tab.title;
         tabItem.draggable = true;
-        tabItem.title = "Drag to add to bookmarks or click to add to current category";
+        tabItem.title = 'Click to open this tab. Drag to save it as a bookmark.';
 
         // Get favicon or use a default
         const favicon = tab.favIconUrl || '';
@@ -1474,19 +1495,9 @@ function renderOpenTabs() {
             draggedItemType = null;
         });
 
-        // Make the entire tab item clickable to add as bookmark
+        // Make the entire tab item clickable to open/select the existing tab.
         tabItem.addEventListener('click', () => {
-            if (currentCategoryId) {
-                addBookmark(tab.title, tab.url);
-
-                // Show visual feedback
-                tabItem.classList.add('tab-added');
-                setTimeout(() => {
-                    tabItem.classList.remove('tab-added');
-                }, 1500);
-            } else {
-                alert('Please select a category first before adding a bookmark.');
-            }
+            activateOpenTab(tab);
         });
 
         openTabsList.appendChild(tabItem);
