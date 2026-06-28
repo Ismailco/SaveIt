@@ -441,23 +441,22 @@ async function init() {
         loadOpenTabs();
         setupEventListeners();
 
-        // Load the saved selected category
-        const savedCategoryId = await SaveItDB.getSetting('selectedCategory');
-        if (savedCategoryId && categories.some(cat => cat.id === savedCategoryId)) {
-            selectCategory(savedCategoryId);
-        }
-
-        // Load collapsed sections state
+        // Load UI state before rendering the selected category.
         const savedCollapsedSections = await SaveItDB.getSetting('collapsedSections');
-        if (savedCollapsedSections) {
+        if (savedCollapsedSections && typeof savedCollapsedSections === 'object') {
             collapsedSections = savedCollapsedSections;
         }
 
-        // Load sidebar state
         const savedSidebarState = await SaveItDB.getSetting('sidebarState');
-        if (savedSidebarState) {
-            sidebarState = savedSidebarState;
+        if (savedSidebarState && typeof savedSidebarState === 'object') {
+            sidebarState = { ...sidebarState, ...savedSidebarState };
             applySidebarState();
+        }
+
+        // Load the saved selected category
+        const savedCategoryId = await SaveItDB.getSetting('selectedCategory');
+        if (savedCategoryId && categories.some(cat => cat.id === savedCategoryId)) {
+            await selectCategory(savedCategoryId);
         }
     } catch (error) {
         console.error('Error initializing app:', error);
@@ -903,7 +902,7 @@ function createSectionElement(section, sectionBookmarks) {
     sectionDiv.appendChild(sectionContent);
 
     // Add click event for toggling section
-    titleBar.addEventListener('click', (e) => {
+    titleBar.addEventListener('click', async (e) => {
         if (!e.target.classList.contains('section-edit') &&
             !e.target.classList.contains('section-delete') &&
             !e.target.classList.contains('drag-handle')) {
@@ -918,7 +917,7 @@ function createSectionElement(section, sectionBookmarks) {
                 delete collapsedSections[section.id];
             }
 
-            saveCollapsedSectionsToIndexedDB();
+            await saveCollapsedSectionsToIndexedDB();
         }
     });
 
