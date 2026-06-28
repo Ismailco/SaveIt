@@ -233,14 +233,17 @@ function handleBookmarksDragOver(e) {
         const draggable = document.querySelector('.dragging');
         if (!draggable) return;
 
-        const allSections = [...document.querySelectorAll('.bookmark-section:not(.dragging)')];
-        const defaultSection = document.querySelector('.default-section');
+        const targetColumn = getTargetBookmarkColumn(e);
+        if (!targetColumn) return;
+
+        const allSections = [...targetColumn.querySelectorAll('.bookmark-section:not(.dragging)')];
+        const defaultSection = targetColumn.querySelector('.default-section');
         let afterElement = null;
 
         for (const section of allSections) {
             const rect = section.getBoundingClientRect();
             if (e.clientY < rect.top + rect.height / 2) {
-                if (section.parentNode === bookmarksList) {
+                if (section.parentNode === targetColumn) {
                     afterElement = section;
                     break;
                 }
@@ -249,19 +252,19 @@ function handleBookmarksDragOver(e) {
 
         if (afterElement == null && defaultSection) {
             const rect = defaultSection.getBoundingClientRect();
-            if (e.clientY < rect.top + rect.height / 2 && defaultSection.parentNode === bookmarksList) {
+            if (e.clientY < rect.top + rect.height / 2 && defaultSection.parentNode === targetColumn) {
                 afterElement = defaultSection;
             }
         }
 
         if (afterElement == null) {
-            if (draggable.parentNode !== bookmarksList) {
-                bookmarksList.appendChild(draggable);
+            if (draggable.parentNode !== targetColumn) {
+                targetColumn.appendChild(draggable);
             }
         } else {
             try {
-                if (afterElement.parentNode === bookmarksList) {
-                    bookmarksList.insertBefore(draggable, afterElement);
+                if (afterElement.parentNode === targetColumn) {
+                    targetColumn.insertBefore(draggable, afterElement);
                 }
             } catch (err) {
                 console.error('Error during section drag and drop:', err);
@@ -365,7 +368,7 @@ async function handleBookmarksDrop(e) {
         draggedTabData = null;
     } else if (draggedItemType === 'section') {
         try {
-            const sectionItems = document.querySelectorAll('.bookmark-section');
+            const sectionItems = getOrderedSectionElements();
             let order = 0;
 
             for (const item of sectionItems) {
@@ -381,6 +384,39 @@ async function handleBookmarksDrop(e) {
             alert('Error updating section order. Please try again.');
         }
     }
+}
+
+function getTargetBookmarkColumn(e) {
+    const columns = [...bookmarksList.querySelectorAll('.bookmark-column')];
+    if (columns.length === 0) {
+        return bookmarksList;
+    }
+
+    return columns.find(column => {
+        const rect = column.getBoundingClientRect();
+        return e.clientX >= rect.left && e.clientX <= rect.right;
+    }) || columns[columns.length - 1];
+}
+
+function getOrderedSectionElements() {
+    const columns = [...bookmarksList.querySelectorAll('.bookmark-column')];
+    if (columns.length === 0) {
+        return [...bookmarksList.querySelectorAll('.bookmark-section')];
+    }
+
+    const columnSections = columns.map(column => [...column.querySelectorAll('.bookmark-section')]);
+    const orderedSections = [];
+    const maxSections = Math.max(...columnSections.map(items => items.length));
+
+    for (let index = 0; index < maxSections; index++) {
+        columnSections.forEach(items => {
+            if (items[index]) {
+                orderedSections.push(items[index]);
+            }
+        });
+    }
+
+    return orderedSections;
 }
 
 // DOM Elements
@@ -798,6 +834,8 @@ function renderBookmarks() {
         return;
     }
 
+    const bookmarkColumns = createBookmarkColumns();
+
     // Group bookmarks by section
     const bookmarksBySection = {};
     const defaultBookmarks = [];
@@ -814,9 +852,10 @@ function renderBookmarks() {
     });
 
     // Create sections and render bookmarks
-    categorySections.forEach(section => {
+    categorySections.forEach((section, index) => {
         const sectionBookmarks = bookmarksBySection[section.id] || [];
-        createSectionElement(section, sectionBookmarks);
+        const sectionElement = createSectionElement(section, sectionBookmarks);
+        bookmarkColumns[index % bookmarkColumns.length].appendChild(sectionElement);
     });
 
     // Render bookmarks without a section (default section)
@@ -841,10 +880,21 @@ function renderBookmarks() {
         });
 
         defaultSectionDiv.appendChild(bookmarksContainer);
-        bookmarksList.appendChild(defaultSectionDiv);
+        bookmarkColumns[categorySections.length % bookmarkColumns.length].appendChild(defaultSectionDiv);
     }
 
     // Setup drag and drop for bookmarks list
+}
+
+function createBookmarkColumns() {
+    const columns = [document.createElement('div'), document.createElement('div')];
+
+    columns.forEach(column => {
+        column.className = 'bookmark-column';
+        bookmarksList.appendChild(column);
+    });
+
+    return columns;
 }
 
 // Create a section element
@@ -968,7 +1018,7 @@ function createSectionElement(section, sectionBookmarks) {
 
         // Update section order
         if (draggedItemType === 'section') {
-            const sectionItems = document.querySelectorAll('.bookmark-section');
+            const sectionItems = getOrderedSectionElements();
             let order = 0;
 
             sectionItems.forEach(item => {
@@ -986,7 +1036,7 @@ function createSectionElement(section, sectionBookmarks) {
         draggedItemType = null;
     });
 
-    bookmarksList.appendChild(sectionDiv);
+    return sectionDiv;
 }
 
 // Create a bookmark element
