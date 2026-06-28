@@ -249,7 +249,7 @@ body {
 .categories-section {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 0;
     overflow: hidden;
     transition: transform var(--transition-base), opacity var(--transition-base);
 }
@@ -305,7 +305,7 @@ body {
 .open-tabs-section {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 0;
     overflow: hidden;
     transition: transform var(--transition-base), opacity var(--transition-base);
 }
@@ -421,7 +421,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0;
-    border-top: 1px solid var(--color-border);
 }
 
 .panel-footer {
@@ -526,7 +525,6 @@ body {
     flex-direction: column;
     gap: 0;
     flex: 1;
-    border-top: 1px solid var(--color-border);
 }
 
 #loading-tabs {
