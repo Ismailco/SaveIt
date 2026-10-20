@@ -17,15 +17,14 @@
 
 ## 🌟 Features
 
-- **Category Management** — Create, organize, and manage bookmark categories
-- **Intuitive Bookmarking** — Add, view, and delete bookmarks within categories
-- **Tab Integration** — View all open tabs and add them to categories with a single click
-- **Elegant UI** — Refined glassmorphism interface with modern typography and soft shadows
-- **Responsive Layout** — Fluid three-panel grid that adapts beautifully from ultrawide screens down to mobile
-- **Data Privacy** — All data is stored locally in your browser (using IndexedDB)
-- **Zero Data Collection** — No data is sent to any servers
-- **Drag and Drop** — Organize your bookmarks and categories with intuitive drag-and-drop functionality
-- **Collapsible Panels** — Customize your view by toggling sidebar visibility
+- **Category & Section Management** — Organize bookmarks into categories and collapsible, renamable sections arranged across a two-column board
+- **Per-Section Row Layouts** — Choose 1, 2, or 3 bookmarks per row for each section using the column layout icons
+- **Instant Search** — Press `/` to quickly filter bookmarks and sections within the selected category
+- **Open Tabs Integration** — Drag open tabs directly into any section, click **Save all** to capture every open tab into a dated section, or click a tab to switch to it
+- **Backup & Restore (Import / Export)** — Export your categories, sections, bookmarks, and layout settings to a JSON file and import them into any browser
+- **Drag and Drop** — Reorder categories, sections (across columns), and bookmarks with smooth drag-and-drop
+- **Collapsible Panels** — Show or hide the **Categories** and **Open tabs** sidebars from the top bar
+- **Data Privacy & Zero Tracking** — All data is stored locally in your browser using IndexedDB; nothing is sent to external servers
 
 ## 🚀 Installation
 
@@ -40,14 +39,15 @@
 
 ## 📖 Usage
 
-- Open a new tab to access SaveIt
-- Click "+ Add Category" to create a new category
-- Select a category and click "+ Add Bookmark" to add a new bookmark manually
-- Browse your open tabs on the right side and click "+" to add any open tab to the selected category
-- Click on a bookmark to visit the website
-- Use the toggle buttons to collapse or expand the side panels
-- Click the "×" next to a bookmark or category to delete it
-- Click "↻ Refresh" to update the list of open tabs
+- Open a new tab to launch SaveIt
+- Click **Add category** in the left sidebar to create a category
+- Inside a category, click **Section** to create a collapsible group or **Bookmark** to save a link manually
+- Use the vertical line icons (`|`, `||`, `|||`) on any section header to display 1, 2, or 3 bookmarks per row
+- Drag an open tab from the **Open tabs** panel onto a section to save it, or click **Save all** to save all open tabs into a section named after today's date
+- Click any item in **Open tabs** to jump straight to that browser tab
+- Press `/` to focus the search bar and filter bookmarks in the current category (`Esc` to clear)
+- Use the **Categories** and **Open tabs** buttons in the top bar to toggle sidebar visibility
+- Open the **Settings** (gear) menu to **Export data**, **Import data**, **Customize Chrome**, or **Expand / Collapse all sections**
 
 ## ✨ Customization
 
@@ -72,10 +72,9 @@ Feel free to open issues for bug reports, feature requests, or general feedback.
 
 ## ⚠️ Notes
 
-- This extension uses IndexedDB, which means data is stored in your browser
-- Clearing browser data might delete your saved bookmarks
-- There is no sync functionality between different browsers or devices
-- The extension requires "tabs" permission to access your open tabs
+- This extension uses IndexedDB, which means data is stored locally in your browser
+- Clearing browser data can remove saved bookmarks — use **Settings → Export data** to keep a JSON backup or move your workspace between browsers
+- The extension requires the `tabs` permission to list, save, and switch to your open tabs
 
 ## 📄 License
 
